@@ -1,0 +1,27 @@
+{
+  "name": "videoweb-client",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^0.26.1",
+    "dplayer": "^1.26.0",
+    "qs": "^6.10.3",
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.2.0",
+    "less": "^4.1.2",
+    "less-loader": "^7.3.0",
+    "naive-ui": "^2.26.2",
+    "vfonts": "^0.0.3",
+    "vite": "^2.8.0",
+    "vue-picture-cropper": "^0.5.1",
+    "vue-router": "^4.0.14",
+    "vuex": "^4.0.2"
+  }
+}
