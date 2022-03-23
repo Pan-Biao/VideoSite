@@ -1,18 +1,30 @@
 <script setup>
 import { reactive, ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import DPlayer from "dplayer";
+import store from "../store";
 
 let dplayer = ref(null);
 const d = reactive({
+  route: useRoute(),
   dp: null,
+  vid: null,
   vMessage: {
-    title: "第一个视频",
-    info: "没有什asdsfadsfdsakljdfagijhadsiugfhjadiojgokasdjguihadgiojasopgkpaljgoiaopskgplkaspgjo么信息",
+    cover: "",
+    created_at: 0,
+    id: 0,
+    info: "",
+    play_number: 0,
+    said: 1,
+    title: "美少女跳舞",
+    uid: 1,
+    updated_at: 0,
   },
   uMessage: {
-    title: "傻UP",
-    info: "没有什么信息",
-    avatar: "",
+    head_portrait: "",
+    id: 0,
+    nickname: "",
+    info: "",
   },
 });
 
@@ -21,7 +33,7 @@ function initPlay() {
     container: dplayer.value,
     playbackSpeed: [0.5, 0.75, 1, 1.25, 1.5, 2],
     video: {
-      url: "http://127.0.0.1:2333/api/v1/video/play/1/6.mp4",
+      url: `${store.state.videoApi}${d.vid}.mp4`,
     },
     danmaku: {
       //   api:"https://api.prprpr.me/dplayer/",
@@ -32,7 +44,14 @@ function initPlay() {
 
 onMounted(() => {
   // DOM 元素将在初始渲染后分配给 ref
-  console.log(dplayer.value); // <div>This is a root element</div>
+  const vid = d.route.params["vid"];
+  d.vid = vid;
+  window.$http.get(`/api/v1/video/${vid}`).then(({ data }) => {
+    if (data.code == 200) {
+      d.vMessage = data.data;
+      d.uMessage = data.data.user;
+    }
+  });
   initPlay();
 });
 </script>
@@ -41,7 +60,7 @@ onMounted(() => {
     <div class="flex">
       <div class="v_message">
         <div class="v_title">{{ d.vMessage.title }}</div>
-        <div class="v_time">2014-5-9</div>
+        <div class="v_time">{{ d.vMessage.created_at }}</div>
       </div>
       <div class="u_message">
         <div class="u_frame">
@@ -49,11 +68,11 @@ onMounted(() => {
             class="u_avatar"
             :size="48"
             round
-            :src="d.uMessage.avatar"
+            :src="d.uMessage.head_portrait"
           />
         </div>
         <div class="u_frame" style="margin-left: 20px">
-          <div class="u_title">{{ d.uMessage.title }}</div>
+          <div class="u_title">{{ d.uMessage.nickname }}</div>
           <div class="u_info">{{ d.uMessage.info }}</div>
         </div>
       </div>
@@ -87,8 +106,8 @@ onMounted(() => {
         >
           <n-tab-pane :name="0" tab="按时间">
             <div class="comment">
-              <div class="c_avatar">
-                <n-avatar :size="48" round :src="d.uMessage.avatar" />
+              <div class="avatar">
+                <n-avatar :size="48" round :src="d.uMessage.head_portrait" />
               </div>
 
               <div class="comment_text">
@@ -122,9 +141,7 @@ onMounted(() => {
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
-  }
-  #dplayer{
-    margin-top: 10px;
+    margin-bottom: 10px;
   }
   .comment_area {
     margin-top: 40px;
@@ -168,10 +185,15 @@ onMounted(() => {
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-between;
+        .n-avatar {
+          cursor: pointer;
+        }
         .comment_text {
           width: 100%;
           margin-left: 10px;
+
           .name {
+            cursor: pointer;
             line-height: 24px;
           }
           .name:hover {

@@ -6,12 +6,17 @@ import store from "../store";
 
 onMounted(() => {
   const vid = d.route.params["vid"];
-  d.modify = d.route.meta["modify"]
+  d.modify = d.route.meta["modify"];
   console.log(vid);
   if (d.modify) {
     window.$http.get(`/api/v1/video/${vid}`).then(({ data }) => {
       if (data.code == 200) {
-        console.log(data);
+        console.log(data.data);
+        d.vid = data.data.id;
+        form.title = data.data.title;
+        form.info = data.data.info;
+        form.said = data.data.said;
+        d.showimg = store.state.coverApi + data.data.cover;
       }
     });
   }
@@ -38,6 +43,7 @@ const d = reactive({
   showimg: "",
   vname: "",
   fileImg: null,
+  vid: null,
 });
 const formRef = ref(null);
 const videoRef = ref(null);
@@ -49,6 +55,7 @@ const form = reactive({
   said: 1,
 });
 function uploadImg() {
+  upimgRef.value.value = "";
   upimgRef.value.click();
 }
 function uploadVideo() {
@@ -68,13 +75,6 @@ const subAreaValidationStatus = computed(() => {
     return "error";
   }
 });
-function handleBeforeLeave(tabName) {
-  console.log(tabName);
-  return true;
-}
-function handleUpdateValue(value) {
-  console.log(value);
-}
 // 判断浏览器是否支持 createObjectURL api
 function getObjectURL(file) {
   var url = null;
@@ -94,9 +94,6 @@ function onchangeImg({ target: data }) {
   d.upimg = getObjectURL(file);
   d.showModal = true;
 }
-function closeModal() {
-  d.showModal = false;
-}
 function reset() {
   cropper.reset();
 }
@@ -107,7 +104,12 @@ async function getResult() {
   // 获取生成的blob文件信息
   const blob = await cropper.getBlob();
   // 获取生成的file文件信息
-  const file = await cropper.getFile();
+  // const file = await cropper.getFile();
+  //把blob转换成file文件并设定type
+  const file = new File([blob], "upload.png", {
+    type: "image/png",
+    lastModified: Date.now(),
+  });
   console.log({ base64, blob, file });
   // 把base64赋给结果展示区
   // d.showimg = base64;
@@ -131,31 +133,52 @@ function onchangeVideo({ target: data }) {
 function contributionConfirm() {
   const formData = new FormData();
 
-  let file = videoRef.value.files[0];
-
   form.said = parseInt(form.said);
   Object.keys(form).forEach((key) => {
     formData.append(key, form[key]);
   });
-  formData.append("video", file);
-
-  let vimg = d.fileImg;
-  formData.append("vimg", vimg);
-
-  window.$http
-    .post("/api/v1/video", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data;charset=UTF-8",
-      },
-    })
-    .then(({ data }) => {
-      console.log(data);
-      if (data.code == 200) {
-        window.$message.success("视频创建成功");
-      } else {
-        window.$message.error(data.msg);
-      }
-    });
+  let file = videoRef.value.files[0];
+  if (d.modify) {
+    if (file) formData.append("video", file);
+    if (d.fileImg) formData.append("vimg", d.fileImg);
+    window.$http
+      .put(`/api/v1/video/${d.vid}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data;charset=UTF-8",
+        },
+      })
+      .then(({ data }) => {
+        console.log(data);
+        if (data.code == 200) {
+          window.$message.success("视频修改成功");
+        } else {
+          window.$message.error(data.msg);
+        }
+      });
+  } else {
+    formData.append("video", file);
+    formData.append("vimg", d.fileImg);
+    window.$http
+      .post("/api/v1/video", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data;charset=UTF-8",
+        },
+      })
+      .then(({ data }) => {
+        console.log(data);
+        if (data.code == 200) {
+          window.$message.success("视频创建成功");
+        } else {
+          window.$message.error(data.msg);
+        }
+      });
+  }
+  d.router.push({
+    name: "Video",
+    params: {
+      vid: d.vid,
+    },
+  });
 }
 </script>
 
@@ -273,7 +296,7 @@ function contributionConfirm() {
         </n-form-item>
         <div style="display: flex; justify-content: flex-end">
           <n-button size="large" type="primary" @click="contributionConfirm">
-            投稿
+            {{ d.modify ? `修改` : `投稿` }}
           </n-button>
         </div>
       </n-form>

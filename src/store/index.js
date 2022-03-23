@@ -2,11 +2,16 @@
 import { createStore } from "vuex";
 import request from '../tool/axios';
 
+const api = "http://localhost:2333"
+
 export default createStore({
     // 声明变量
     state: {
         "name": 'xxxxx',
-        "api": "http://localhost:2333",
+        "api": api,
+        "coverApi": `${api}/api/v1/cover/`,
+        "headPortraitApi": `${api}/api/v1/head_portrait/`,
+        "videoApi": `${api}/api/v1/video/play/`,
         "userData": {},
         "searchValue": ""
     },
