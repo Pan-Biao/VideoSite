@@ -16,7 +16,7 @@ onMounted(() => {
         form.title = data.data.title;
         form.info = data.data.info;
         form.said = data.data.said;
-        d.showimg = store.state.coverApi + data.data.cover;
+        d.showimg = store.state.fileApi + data.data.cover;
       }
     });
   }

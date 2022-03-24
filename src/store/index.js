@@ -9,9 +9,7 @@ export default createStore({
     state: {
         "name": 'xxxxx',
         "api": api,
-        "coverApi": `${api}/api/v1/cover/`,
-        "headPortraitApi": `${api}/api/v1/head_portrait/`,
-        "videoApi": `${api}/api/v1/video/play/`,
+        "fileApi": `${api}/file/`,
         "userData": {},
         "searchValue": ""
     },

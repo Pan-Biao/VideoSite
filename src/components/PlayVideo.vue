@@ -3,6 +3,7 @@ import { reactive, ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import DPlayer from "dplayer";
 import store from "../store";
+import Time from "time.js/time";
 
 let dplayer = ref(null);
 const d = reactive({
@@ -10,6 +11,7 @@ const d = reactive({
   dp: null,
   vid: null,
   vMessage: {
+    path: "",
     cover: "",
     created_at: 0,
     id: 0,
@@ -26,6 +28,17 @@ const d = reactive({
     nickname: "",
     info: "",
   },
+  comments: [
+    {
+      comment: "",
+      created_at: new Date(),
+      user: {
+        head_portrait: "",
+        id: 0,
+        nickname: "",
+      },
+    },
+  ],
 });
 
 function initPlay() {
@@ -33,7 +46,7 @@ function initPlay() {
     container: dplayer.value,
     playbackSpeed: [0.5, 0.75, 1, 1.25, 1.5, 2],
     video: {
-      url: `${store.state.videoApi}${d.vid}.mp4`,
+      url: store.state.fileApi + d.vMessage.path,
     },
     danmaku: {
       //   api:"https://api.prprpr.me/dplayer/",
@@ -49,10 +62,10 @@ onMounted(() => {
   window.$http.get(`/api/v1/video/${vid}`).then(({ data }) => {
     if (data.code == 200) {
       d.vMessage = data.data;
+      initPlay();
       d.uMessage = data.data.user;
     }
   });
-  initPlay();
 });
 </script>
 <template>
@@ -60,7 +73,14 @@ onMounted(() => {
     <div class="flex">
       <div class="v_message">
         <div class="v_title">{{ d.vMessage.title }}</div>
-        <div class="v_time">{{ d.vMessage.created_at }}</div>
+        <div class="v_time">
+          {{
+            `播放量 ${d.vMessage.play_number}   ${Time(
+              d.vMessage.created_at,
+              "%y-%M-%d %h:%m:%s"
+            )}`
+          }}
+        </div>
       </div>
       <div class="u_message">
         <div class="u_frame">
@@ -68,12 +88,13 @@ onMounted(() => {
             class="u_avatar"
             :size="48"
             round
-            :src="d.uMessage.head_portrait"
+            :src="store.state.fileApi + d.uMessage.head_portrait"
           />
         </div>
         <div class="u_frame" style="margin-left: 20px">
           <div class="u_title">{{ d.uMessage.nickname }}</div>
           <div class="u_info">{{ d.uMessage.info }}</div>
+          <n-button type="info" size="tiny" ghost> 关注 </n-button>
         </div>
       </div>
     </div>
@@ -105,15 +126,21 @@ onMounted(() => {
           @update:value="handleUpdateValue"
         >
           <n-tab-pane :name="0" tab="按时间">
-            <div class="comment">
+            <div class="comment" v-for="item in comments">
               <div class="avatar">
-                <n-avatar :size="48" round :src="d.uMessage.head_portrait" />
+                <n-avatar
+                  :size="48"
+                  round
+                  :src="store.state.fileApi + item.user.head_portrait"
+                />
               </div>
 
               <div class="comment_text">
-                <div class="name">UP猪</div>
-                <div class="text">视频真好看</div>
-                <div class="time">2014-5-6</div>
+                <div class="name">{{ item.user.nickname }}</div>
+                <div class="text">{{ item.comment }}</div>
+                <div class="time">
+                  {{ Time(item.created_at, "%y年%M月%d日 %h:%m:%s") }}
+                </div>
               </div>
             </div>
           </n-tab-pane>
@@ -221,6 +248,9 @@ onMounted(() => {
   max-width: 400px;
   word-break: break-all;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
   .v_title {
     font-size: 24px;
   }
@@ -230,14 +260,13 @@ onMounted(() => {
   }
 }
 .u_message {
-  width: 200px;
+  max-width: 260px;
+  min-width: 200px;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
   flex-wrap: nowrap;
-  overflow: hidden;
   .u_frame {
-    height: 60px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -245,14 +274,14 @@ onMounted(() => {
       cursor: pointer;
     }
     .u_title {
+      min-width: 100px;
       font-size: 20px;
       cursor: pointer;
     }
     .u_info {
-      cursor: pointer;
+      margin-bottom: 5px;
     }
-    .u_title:hover,
-    .u_info:hover {
+    .u_title:hover {
       color: #63e2b7;
     }
   }

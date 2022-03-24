@@ -11,6 +11,7 @@
     "axios": "^0.26.1",
     "dplayer": "^1.26.0",
     "qs": "^6.10.3",
+    "time.js": "^0.0.1",
     "vue": "^3.2.25"
   },
   "devDependencies": {
