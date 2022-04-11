@@ -1,15 +1,38 @@
 <script setup>
-import { reactive, ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import DPlayer from "dplayer";
+import { reactive, ref, onMounted, inject, ssrContextKey } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import store from "../store";
-import Time from "time.js/time";
+import DPlayer from "dplayer";
+import { time } from "../tool";
+import { useGetVideo, usePlayVideo } from "../api/video";
+import { useCreateFollow, useDeleteFollow, useIsFollow } from "../api/follow";
+import {
+  useLikeVideo,
+  useUnLikeVideo,
+  useIsLikeVideo,
+  useLikeComment,
+  useUnLikeComment,
+  useIsLikeComment,
+} from "../api/like";
+import { UserCircle, TrashAlt } from "@vicons/fa";
+import {
+  useGetListComment,
+  useCreateComment,
+  useDeleteComment,
+} from "../api/comment";
+import { Table } from "vxe-table";
 
 let dplayer = ref(null);
+let vs = ref(null);
 const d = reactive({
   route: useRoute(),
+  router: useRouter(),
   dp: null,
-  vid: null,
+  danmu: null,
+  vid: 0,
+  commentValue: "",
+  isFollwe: false,
+  isLike: false,
   vMessage: {
     path: "",
     cover: "",
@@ -31,7 +54,7 @@ const d = reactive({
   comments: [
     {
       comment: "",
-      created_at: new Date(),
+      created_at: 0,
       user: {
         head_portrait: "",
         id: 0,
@@ -40,33 +63,149 @@ const d = reactive({
     },
   ],
 });
-
+//初始化播放器
 function initPlay() {
+  let danmaku = {
+    id: `videoweb_${d.vMessage.id}`,
+    api: "https://dplayer.moerats.com/",
+    // addition: [" https://api.prprpr.me/dplayer/v3/bilibili?aid=[aid]"],
+  };
+  function ifdanmaku() {
+    if (store.getters.userData.id) {
+      return danmaku;
+    } else {
+      return null;
+    }
+  }
   d.dp = new DPlayer({
     container: dplayer.value,
     playbackSpeed: [0.5, 0.75, 1, 1.25, 1.5, 2],
     video: {
       url: store.state.fileApi + d.vMessage.path,
     },
-    danmaku: {
-      //   api:"https://api.prprpr.me/dplayer/",
-      addition: [" https://api.prprpr.me/dplayer/v3/bilibili?aid=[aid]"],
-    },
+    danmaku: ifdanmaku(),
+  });
+  d.dp.on("play", function () {
+    usePlayVideo(d.vid);
   });
 }
-
+//运行时
 onMounted(() => {
   // DOM 元素将在初始渲染后分配给 ref
   const vid = d.route.params["vid"];
-  d.vid = vid;
-  window.$http.get(`/api/v1/video/${vid}`).then(({ data }) => {
-    if (data.code == 200) {
-      d.vMessage = data.data;
+  d.vid = +vid;
+  useGetVideo(vid).then((res) => {
+    if (res) {
+      d.vMessage = res;
       initPlay();
-      d.uMessage = data.data.user;
+      d.uMessage = res.user;
+      findFollow(d.uMessage.id);
     }
   });
+  getCommentList();
 });
+
+//获取评论列表
+function getCommentList() {
+  useGetListComment({
+    vid: d.vid,
+    // sorts: [
+    //   {
+    //     field: "like_number",
+    //     sort: "desc",
+    //   },
+    // ],
+  }).then((res) => {
+    if (res) d.comments = res ? res : [];
+  });
+}
+//跳转UP
+function jumpUp(up) {
+  d.router.push({
+    name: "Space",
+    params: {
+      uid: up.id,
+    },
+  });
+}
+//切换
+function handleBeforeLeave(tabName) {
+  console.log(tabName);
+  return true;
+}
+//发表评论
+function addComment(value) {
+  useCreateComment(d.vid, {
+    comment: value,
+  }).then((res) => {
+    if (res) {
+      getCommentList();
+      d.commentValue = "";
+    }
+  });
+}
+//删除评论
+function deleteComment(id) {
+  useDeleteComment(id).then((res) => {
+    getCommentList();
+  });
+}
+//关注
+function follow(id) {
+  useCreateFollow(id).then((res) => {
+    if (res) d.isFollwe = true;
+  });
+}
+//不关注
+function notFollow(id) {
+  useDeleteFollow(id).then((res) => {
+    if (res) d.isFollwe = false;
+  });
+}
+//查询关注
+function findFollow(id) {
+  useIsFollow(id).then((res) => {
+    d.isFollwe = res;
+  });
+}
+//查询点赞视频
+function findLikeVideo(id) {
+  useLikeVideo(id).then((res) => {
+    d.isLike = res;
+  });
+}
+//点赞视频
+function likeVideo(id) {
+  useLikeVideo(id).then((res) => {
+    if (res) d.isLike = true;
+  });
+}
+//不点赞视频
+function unLikeVideo(id) {
+  useUnLikeVideo(id).then((res) => {
+    if (res) d.isLike = true;
+  });
+}
+//查询点赞评论
+function findLikeComment() {
+  useLikeVideo(id).then((res) => {
+    if(res){
+      
+    }
+  });
+}
+//点赞评论
+function likeComment(id) {
+  useLikeComment(id).then((res) => {
+    if (res) findLikeComment()
+  });
+}
+//不点赞评论
+function unLikeComment(id) {
+  useUnLikeComment(id).then((res) => {
+    if (res) findLikeComment()
+  });
+}
 </script>
 <template>
   <div class="frame">
@@ -75,29 +214,53 @@ onMounted(() => {
         <div class="v_title">{{ d.vMessage.title }}</div>
         <div class="v_time">
           {{
-            `播放量 ${d.vMessage.play_number}   ${Time(
-              d.vMessage.created_at,
-              "%y-%M-%d %h:%m:%s"
-            )}`
+            `播放量 ${d.vMessage.play_number}   ${time(d.vMessage.created_at)}`
           }}
         </div>
       </div>
       <div class="u_message">
         <div class="u_frame">
           <n-avatar
+            v-if="d.uMessage.head_portrait"
             class="u_avatar"
             :size="48"
             round
             :src="store.state.fileApi + d.uMessage.head_portrait"
+            @click="jumpUp(d.uMessage)"
+          />
+          <n-icon
+            style="cursor: pointer"
+            @click="jumpUp(d.uMessage)"
+            v-else
+            size="40"
+            :component="UserCircle"
           />
         </div>
         <div class="u_frame" style="margin-left: 20px">
           <div class="u_title">{{ d.uMessage.nickname }}</div>
           <div class="u_info">{{ d.uMessage.info }}</div>
-          <n-button type="info" size="tiny" ghost> 关注 </n-button>
+          <n-button
+            v-show="store.getters.userData.id && !d.isFollwe"
+            type="info"
+            size="tiny"
+            ghost
+            @click="follow(d.uMessage.id)"
+          >
+            关注
+          </n-button>
+          <n-button
+            v-show="store.getters.userData.id && d.isFollwe"
+            type="info"
+            size="tiny"
+            ghost
+            @click="notFollow(d.uMessage.id)"
+          >
+            取消关注
+          </n-button>
         </div>
       </div>
     </div>
+
     <div ref="dplayer" id="dplayer"></div>
     <div class="v_info">
       <n-ellipsis expand-trigger="click" :line-clamp="2" :tooltip="false">
@@ -106,7 +269,7 @@ onMounted(() => {
     </div>
 
     <div class="comment_area">
-      <div class="comment_input">
+      <div v-show="store.getters.userData.id" class="comment_input">
         <n-input
           type="textarea"
           :autosize="{
@@ -115,8 +278,9 @@ onMounted(() => {
           maxlength="100"
           clearable
           show-count
+          v-model:value="d.commentValue"
         />
-        <div class="send">发表评论</div>
+        <div @click="addComment(d.commentValue)" class="send">发表评论</div>
       </div>
       <div class="comment_list">
         <n-tabs
@@ -126,26 +290,80 @@ onMounted(() => {
           @update:value="handleUpdateValue"
         >
           <n-tab-pane :name="0" tab="按时间">
-            <div class="comment" v-for="item in comments">
+            <div class="comment" v-for="item in d.comments" :key="item.id">
               <div class="avatar">
                 <n-avatar
                   :size="48"
                   round
+                  v-if="item.user.head_portrait"
+                  @click="jumpUp(item.user)"
                   :src="store.state.fileApi + item.user.head_portrait"
                 />
+                <n-icon
+                  style="cursor: pointer"
+                  @click="jumpUp(item.user)"
+                  v-else
+                  size="40"
+                  :component="UserCircle"
+                />
               </div>
-
               <div class="comment_text">
-                <div class="name">{{ item.user.nickname }}</div>
+                <div @click="jumpUp(item.user)" class="name">
+                  {{ item.user.nickname }}
+                </div>
                 <div class="text">{{ item.comment }}</div>
                 <div class="time">
-                  {{ Time(item.created_at, "%y年%M月%d日 %h:%m:%s") }}
+                  {{ time(item.created_at) }}
                 </div>
+              </div>
+              <div class="delete">
+                <n-icon
+                  v-show="item.commentator == store.getters.userData.id"
+                  style="cursor: pointer"
+                  @click="deleteComment(item.id)"
+                  size="14"
+                  :component="TrashAlt"
+                />
               </div>
             </div>
           </n-tab-pane>
           <n-tab-pane :name="1" tab="按热度">
-            <div class="comment"></div>
+            <div class="comment" v-for="item in d.comments" :key="item.id">
+              <div class="avatar">
+                <n-avatar
+                  :size="48"
+                  round
+                  v-if="item.user.head_portrait"
+                  @click="jumpUp(item.user)"
+                  :src="store.state.fileApi + item.user.head_portrait"
+                />
+                <n-icon
+                  style="cursor: pointer"
+                  @click="jumpUp(item.user)"
+                  v-else
+                  size="40"
+                  :component="UserCircle"
+                />
+              </div>
+              <div class="comment_text">
+                <div @click="jumpUp(item.user)" class="name">
+                  {{ item.user.nickname }}
+                </div>
+                <div class="text">{{ item.comment }}</div>
+                <div class="time">
+                  {{ time(item.created_at) }}
+                </div>
+              </div>
+              <div class="delete">
+                <n-icon
+                  v-show="item.commentator == store.getters.userData.id"
+                  style="cursor: pointer"
+                  @click="deleteComment(item.id)"
+                  size="14"
+                  :component="TrashAlt"
+                />
+              </div>
+            </div>
           </n-tab-pane>
         </n-tabs>
       </div>
@@ -218,7 +436,6 @@ onMounted(() => {
         .comment_text {
           width: 100%;
           margin-left: 10px;
-
           .name {
             cursor: pointer;
             line-height: 24px;
@@ -234,6 +451,10 @@ onMounted(() => {
             font-size: 12px;
             color: rgb(175, 175, 175);
           }
+        }
+        .delete {
+          align-items: center;
+          display: flex;
         }
       }
     }

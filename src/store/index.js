@@ -1,8 +1,9 @@
 // 引入
 import { createStore } from "vuex";
 import request from '../tool/axios';
+import { useGetMe } from "../api/user"
 
-const api = "http://localhost:2333"
+const api = process.env.BASE_API2
 
 export default createStore({
     // 声明变量
@@ -10,8 +11,20 @@ export default createStore({
         "name": 'xxxxx',
         "api": api,
         "fileApi": `${api}/file/`,
-        "userData": {},
+        "assetsApi": `${api}/assets/`,
+        "userData": {
+            id: 0,
+            info: "",
+            root: false,
+            nickname: "",
+            head_portrait: "",
+        },
         "searchValue": ""
+    },
+    getters: {
+        userData: (state) => {
+            return state.userData
+        }
     },
     // 修改变量（state不能直接赋值修改，只能通过mutations）
     mutations: {
@@ -30,24 +43,22 @@ export default createStore({
     actions: {
         // 参数一：自带属性，参数二：新值
         setUser(context, value) {
-            // 修改getname的值
             context.commit('setUser', value)
         },
         setSearch(context, value) {
             context.commit("setSearch", value)
         },
-        getUser(context) {
+        getUser({ commit }) {
             // 返回一个Promise函数
             return new Promise((reslove, reject) => {
                 // 请求
-                request.get('/api/v1/user/me').then(res => {
+                useGetMe().then(res => {
                     // 修改getAData的值
-                    context.commit('getAData', res)
+                    commit('setUser', res)
                     reslove(res)
                 }).catch(res => { reject(res) })
             })
         },
-
     },
     modules: {},
 });

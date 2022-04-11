@@ -3,20 +3,21 @@ import { reactive, ref, onMounted, computed } from "vue";
 import VuePictureCropper, { cropper } from "vue-picture-cropper/dist/esm";
 import { useRouter, useRoute } from "vue-router";
 import store from "../store";
+import { useCreateVideo, useUpdateVideo, useGetVideo } from "../api/video";
 
 onMounted(() => {
   const vid = d.route.params["vid"];
   d.modify = d.route.meta["modify"];
   console.log(vid);
   if (d.modify) {
-    window.$http.get(`/api/v1/video/${vid}`).then(({ data }) => {
-      if (data.code == 200) {
-        console.log(data.data);
-        d.vid = data.data.id;
-        form.title = data.data.title;
-        form.info = data.data.info;
-        form.said = data.data.said;
-        d.showimg = store.state.fileApi + data.data.cover;
+    useGetVideo(vid).then((res) => {
+      if (res.code == 200) {
+        console.log(res.data);
+        d.vid = res.data.id;
+        form.title = res.data.title;
+        form.info = res.data.info;
+        form.said = res.data.said;
+        d.showimg = store.state.fileApi + res.data.cover;
       }
     });
   }
@@ -44,6 +45,7 @@ const d = reactive({
   vname: "",
   fileImg: null,
   vid: null,
+  progress: 0,
 });
 const formRef = ref(null);
 const videoRef = ref(null);
@@ -130,6 +132,7 @@ function onchangeVideo({ target: data }) {
     return;
   }
 }
+//上传视频
 function contributionConfirm() {
   const formData = new FormData();
 
@@ -141,44 +144,43 @@ function contributionConfirm() {
   if (d.modify) {
     if (file) formData.append("video", file);
     if (d.fileImg) formData.append("vimg", d.fileImg);
-    window.$http
-      .put(`/api/v1/video/${d.vid}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data;charset=UTF-8",
-        },
-      })
-      .then(({ data }) => {
-        console.log(data);
-        if (data.code == 200) {
-          window.$message.success("视频修改成功");
-        } else {
-          window.$message.error(data.msg);
-        }
-      });
+
+    useUpdateVideo(d.vid, formData, (e) => {
+      let rate = Math.floor((e.loaded / e.total) * 100);
+      d.progress = rate;
+    }).then((res) => {
+      if (res) {
+        window.$message.success("视频修改成功");
+        d.router.push({
+          name: "Video",
+          params: {
+            vid: d.vid,
+          },
+        });
+      } else {
+        window.$message.error(res.msg);
+      }
+    });
   } else {
     formData.append("video", file);
     formData.append("vimg", d.fileImg);
-    window.$http
-      .post("/api/v1/video", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data;charset=UTF-8",
-        },
-      })
-      .then(({ data }) => {
-        console.log(data);
-        if (data.code == 200) {
-          window.$message.success("视频创建成功");
-        } else {
-          window.$message.error(data.msg);
-        }
-      });
+    useCreateVideo(formData, (e) => {
+      let rate = Math.floor((e.loaded / e.total) * 100);
+      d.progress = rate;
+    }).then((res) => {
+      if (res) {
+        window.$message.success("视频创建成功");
+        d.router.push({
+          name: "Video",
+          params: {
+            vid: d.vid,
+          },
+        });
+      } else {
+        window.$message.error(res.msg);
+      }
+    });
   }
-  d.router.push({
-    name: "Video",
-    params: {
-      vid: d.vid,
-    },
-  });
 }
 </script>
 
@@ -252,10 +254,17 @@ function contributionConfirm() {
           />
         </n-form-item>
         <n-form-item label="视频封面">
-          <div class="img" @click="uploadImg">
-            <img :src="d.showimg" ref="showImgRef" alt="" />
-            <div class="text">点击上传图片</div>
+          <div style="flex-direction: column">
+            <div class="img" @click="uploadImg">
+              <img :src="d.showimg" ref="showImgRef" alt="" />
+              <div class="text">点击上传图片</div>
+            </div>
+            <div v-show="d.progress" class="progress">
+              <div class="line" :style="{ width: d.progress * 3 + 'px' }"></div>
+              <div class="text">{{ d.progress + "%" }}</div>
+            </div>
           </div>
+
           <n-modal
             v-model:show="d.showModal"
             :mask-closable="false"
@@ -352,7 +361,6 @@ function contributionConfirm() {
       border: 1px solid rgba(129, 129, 129, 0.5);
       width: 320px;
       height: 230px;
-      margin-right: 20px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -370,6 +378,24 @@ function contributionConfirm() {
       img[src=""],
       img:not([src]) {
         opacity: 0;
+      }
+    }
+    .progress {
+      display: flex;
+      flex-direction: row;
+      margin-top: 10px;
+      border-radius: 3px;
+      overflow: hidden;
+      align-items: center;
+      .line {
+        background-color: rgb(110, 110, 110);
+        height: 10px;
+        width: 0;
+      }
+      .text {
+        height: 20px;
+        line-height: 20px;
+        font-size: 10px;
       }
     }
   }

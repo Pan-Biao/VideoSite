@@ -1,43 +1,40 @@
 <script setup>
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup
-import { reactive, onMounted, ref } from "vue";
+import { reactive, onMounted, ref, nextTick, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useOsTheme, darkTheme, zhCN } from "naive-ui";
+import { darkTheme, zhCN } from "naive-ui";
 import messageApi from "./tool/message-api.vue";
 import store from "./store/index";
-import router from "./routes";
-
+import { Icon } from "@vicons/utils";
+import { Search, UserCircle } from "@vicons/fa";
+import { useGetMe, useLoginOut } from "./api/user";
+//主数据
 const d = reactive({
-  theme: useOsTheme,
+  theme: null,
   activeTheme: false,
+  isRouterAlive: true,
   active: false,
   router: useRouter(),
   searchValue: "",
   flag: false,
 });
+provide("reloadView", reloadView);
+//运行时
+onMounted(() => {
+  useGetMe()
+    .then((res) => {
+      store.dispatch("setUser", res);
+    })
+    .catch((err) => {
+      store.dispatch("setUser", {});
+    });
+});
 
+// d.theme = useOsTheme();
+//获取路由元数据
 useRouter().beforeEach((to, from) => {
   d.flag = ref(to.meta.flag);
-});
-onMounted(() => {
-  const state = window.localStorage.getItem("state");
-  if (state) {
-    window.$http.get("/api/v1/user/me").then(({ data }) => {
-      if (data.code == 200) {
-        store.dispatch("setUser", data.data);
-        console.log(store.state.userData);
-      } else {
-        window.localStorage.removeItem("state");
-        window.$message.success(data.msg);
-        d.router.push({
-          name: "Login",
-        });
-      }
-    });
-  }
-
-  console.log();
 });
 
 const railStyle = ({ focused, checked }) => {
@@ -49,6 +46,7 @@ const railStyle = ({ focused, checked }) => {
   }
   return style;
 };
+//头像下拉菜单
 const options = [
   {
     label: "我的投稿",
@@ -56,6 +54,9 @@ const options = [
     props: {
       onClick: () => {
         window.$message.success("我的投稿");
+        d.router.push({
+          name: "ContributionList",
+        });
       },
     },
   },
@@ -65,6 +66,12 @@ const options = [
     props: {
       onClick: () => {
         window.$message.success("修改信息");
+        d.router.push({
+          name: "Space",
+          params: {
+            uid: store.state.userData.id,
+          },
+        });
       },
     },
   },
@@ -73,24 +80,21 @@ const options = [
     key: "退出登录",
     props: {
       onClick: () => {
-        window.$http.delete("/api/v1/user/logout").then(({ data }) => {
-          if (data.code == 200) {
+        useLoginOut()
+          .then((res) => {
             window.localStorage.removeItem("state");
-            window.$message.success("已退出登录");
-          } else {
+            store.dispatch("setUser", {});
+            reloadView();
+          })
+          .catch((err) => {
             window.localStorage.removeItem("state");
-            window.$message.warning(data.msg);
-            d.router.push({
-              name: "Login",
-            });
-          }
-        });
+            reloadView();
+          });
       },
     },
   },
 ];
-
-const search = (value) => {
+const searchKeyup = (value) => {
   if (value.keyCode == 13) {
     console.log(d.searchValue);
     d.router.push({
@@ -101,17 +105,24 @@ const search = (value) => {
     });
   }
 };
+const search = () => {
+  d.router.push({
+    name: "Search",
+    params: {
+      value: d.searchValue,
+    },
+  });
+};
 
 const handleSelect = (key) => {
   console.log(key);
 };
 function avaterClick() {
-  const state = window.localStorage.getItem("state");
-  if (state) {
+  if (store.getters.userData.id) {
     d.router.push({
       name: "Space",
       params: {
-        uid: store.state.userData.id,
+        uid: store.getters.userData.id,
       },
     });
   } else {
@@ -130,47 +141,83 @@ function contribution() {
     name: "Contribution",
   });
 }
+/**
+ * 刷新 router-view
+ */
+function reloadView() {
+  d.isRouterAlive = false;
+  nextTick(() => {
+    d.isRouterAlive = true;
+  });
+}
 </script>
 
 <template>
   <n-config-provider :locale="zhCN" :theme="d.theme">
+    <!-- 顶部 -->
     <n-card v-show="!d.flag" content-style="padding: 0;" :bordered="false">
       <div class="header">
-        <n-space justify="space-between">
+        <n-space justify="space-between" style="flex-wrap: nowrap">
           <div class="left">
             <n-image
               height="40"
-              :src="`${store.state.api}/api/v1/assets/logo.png`"
+              :src="`${store.state.assetsApi}/logo2.png`"
               style="cursor: pointer"
               @click="logo"
               preview-disabled
             />
             <n-input
-              @keyup="search"
+              @keyup="searchKeyup"
               v-model:value="d.searchValue"
               round
               placeholder="搜索"
             >
               <template #suffix>
-                <n-icon :component="FlashOutline" />
+                <n-icon
+                  style="cursor: pointer"
+                  :component="Search"
+                  @click="search"
+                >
+                </n-icon>
               </template>
             </n-input>
           </div>
           <div class="right">
+            <div class="nickname">
+              {{
+                store.getters.userData.nickname
+                  ? store.getters.userData.nickname
+                  : "点击头像登录"
+              }}
+            </div>
             <n-dropdown
               trigger="hover"
-              :options="options"
+              :options="store.getters.userData.id ? options : []"
               @select="handleSelect"
             >
               <n-avatar
                 style="cursor: pointer"
                 round
                 :size="40"
+                v-if="store.getters.userData.head_portrait"
                 @click="avaterClick"
-                :src="`${store.state.api}/api/v1/assets/logo.png`"
+                :src="`${store.state.assetsApi}${store.getters.userData.head_portrait}`"
+              />
+              <n-icon
+                style="cursor: pointer; margin-right: 40px"
+                @click="avaterClick"
+                v-else
+                size="40"
+                :component="UserCircle"
               />
             </n-dropdown>
-            <n-button dashed @click="contribution"> 投稿 </n-button>
+            <n-button
+              v-show="store.getters.userData.id"
+              dashed
+              @click="contribution"
+            >
+              投稿
+            </n-button>
             <n-button
               dashed
               @click="
@@ -185,19 +232,22 @@ function contribution() {
         </n-space>
       </div>
     </n-card>
+    <!-- 主页面 -->
     <n-card :bordered="false" content-style="padding: 0;">
       <div
         class="content"
         :style="d.flag ? `height: 100vh;` : `height: calc(100vh - 60px);`"
       >
         <n-scrollbar>
-          <router-view />
+          <router-view v-if="d.isRouterAlive" />
         </n-scrollbar>
       </div>
     </n-card>
+    <!-- 消息 -->
     <n-message-provider>
       <messageApi />
     </n-message-provider>
+    <!-- 边侧栏 -->
     <n-drawer v-model:show="d.active" :width="120" placement="right">
       <n-drawer-content closable>
         <template #header> 设置 </template>
@@ -264,6 +314,13 @@ body {
     justify-items: center;
     flex-direction: row;
     align-items: center;
+    .nickname {
+      margin-right: 20px;
+      color: #ff6a00;
+      cursor: default;
+      min-width: 90px;
+      text-align: center;
+    }
     .n-avatar {
       margin-right: 40px;
     }

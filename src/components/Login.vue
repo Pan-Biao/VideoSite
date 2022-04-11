@@ -1,3 +1,66 @@
+<script setup>
+import { computed, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
+import message from "../tool/message-api.vue";
+import store from "../store/index";
+import { useLogin, useRegister } from "../api/user";
+import { Cookies } from "../tool";
+
+const d = reactive({
+  isLgoin: true,
+  checked: false,
+  password: "",
+  passwordConfirm: "",
+  userName: "",
+  nickName: "",
+  router: useRouter(),
+});
+
+function handleClickProtocol() {
+  console.log("《用户协议》");
+}
+function handleClickPolicy() {
+  console.log("《隐私权政策》");
+}
+function register() {
+  d.isLgoin = !d.isLgoin;
+}
+function confirm() {
+  if (d.isLgoin) {
+    useLogin({
+      user_name: d.userName,
+      password: d.password,
+      token: true,
+    }).then((res) => {
+      if (res) {
+        store.dispatch("setUser", res);
+        let day = new Date(res.token_expire).getDay();
+        Cookies.set("X-Token", res.token, { expires: day });
+        if (res.root) {
+          d.router.push({
+            name: "Root",
+          });
+        } else {
+          d.router.back();
+        }
+      }
+    });
+  } else {
+    useRegister({
+      nickname: d.nickName,
+      user_name: d.userName,
+      password: d.password,
+      password_confirm: d.passwordConfirm,
+    }).then((res) => {
+      if (res) {
+        window.$message.success("注册成功");
+        d.isLgoin = true;
+      }
+    });
+  }
+}
+</script>
+
 <template>
   <div class="flex">
     <div class="div">
@@ -65,70 +128,7 @@
   </div>
 </template>
 
-<script setup>
-import { computed, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import message from "../tool/message-api.vue";
-import store from "../store/index";
 
-const d = reactive({
-  isLgoin: true,
-  checked: false,
-  password: "",
-  passwordConfirm: "",
-  userName: "",
-  nickName: "",
-  router: useRouter(),
-});
-
-function handleClickProtocol() {
-  console.log("《用户协议》");
-}
-function handleClickPolicy() {
-  console.log("《隐私权政策》");
-}
-function register() {
-  d.isLgoin = !d.isLgoin;
-}
-function confirm() {
-  if (d.isLgoin) {
-    window.$http
-      .post(`/api/v1/user/login`, {
-        user_name: d.userName,
-        password: d.password,
-      })
-      .then(({ data }) => {
-        console.log(data);
-        if (data.code == 200) {
-          window.localStorage.setItem("state", true);
-          store.dispatch("setUser", data.data);
-          d.router.push({
-            name: "Home",
-          });
-        } else {
-          window.$message.error(data.msg);
-        }
-      });
-  } else {
-    window.$http
-      .post(`/api/v1/user/register`, {
-        nickname: d.nickName,
-        user_name: d.userName,
-        password: d.password,
-        password_confirm: d.passwordConfirm,
-      })
-      .then(({ data }) => {
-        console.log(data);
-        if (data.code == 200) {
-          window.$message.error("注册成功");
-          d.isLgoin = true;
-        } else {
-          window.$message.error(data.msg);
-        }
-      });
-  }
-}
-</script>
 <style lang="less" scoped>
 .flex {
   width: 100vw;
