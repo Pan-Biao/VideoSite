@@ -17,8 +17,8 @@ async function useIsFollow(id) {
     return await api.useFetch(api.GET, getUrl(["isfollow", id].join("/")))
 }
 //添加关注
-async function useCreateFollow(id, data) {
-    return await api.useFetch(api.POST, getUrl(id), data)
+async function useCreateFollow(id) {
+    return await api.useFetch(api.POST, getUrl(id))
 }
 //删除关注
 async function useDeleteFollow(id) {

@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, onMounted, nextTick } from "vue";
+import { reactive, ref, onMounted, nextTick, inject } from "vue";
 import { useRouter } from "vue-router";
 import { useGetVideoList } from "../api/video";
 import { useGetListSubArea } from "../api/sub_area";
@@ -25,8 +25,8 @@ const d = reactive({
   carouselList: [
     {
       id: 1,
-      title: "轮播图展示1",
-      path: "https://naive-ui.oss-cn-beijing.aliyuncs.com/carousel-img/carousel1.jpeg",
+      title: "轮播图",
+      path: "",
       cover: "",
     },
   ],
@@ -82,10 +82,11 @@ const d = reactive({
     },
   ],
 });
+//获取方法
+const getMe = inject("getMe");
 //运行时
 onMounted(() => {
-  //默认轮播图第一
-  d.carouselData = d.carouselList[0];
+  getMe();
   //获取轮播图
   getCarouselList();
   //获取推荐视频列表
@@ -108,6 +109,8 @@ function getCarouselList() {
   useGetCarousel().then((res) => {
     if (res) {
       d.carouselList = res;
+      //默认轮播图第一
+      d.carouselData = d.carouselList[0];
     }
   });
 }
@@ -160,7 +163,6 @@ function jumpVideo(v) {
 }
 //跳转UP
 function jumpUp(up) {
-  console.log(up);
   d.router.push({
     name: "Space",
     params: {
@@ -226,8 +228,8 @@ function handleUpdateValue(value) {
               {{ item.title }}
             </n-ellipsis>
           </div>
-          <div @click="jumpUp(item)" class="up">
-            {{ `${item.user.nickname}  ${time(item.created_at)}` }}
+          <div @click="jumpUp(item.user)" class="up">
+            {{ `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}` }}
           </div>
         </div>
       </n-card>
@@ -266,7 +268,7 @@ function handleUpdateValue(value) {
               </n-ellipsis>
             </div>
             <div @click="jumpUp(item)" class="up">
-              {{ `${item.user.nickname}  ${time(item.created_at)}` }}
+              {{ `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}` }}
             </div>
           </div>
         </n-card>
@@ -383,7 +385,7 @@ function handleUpdateValue(value) {
   min-width: 1040px;
   .n-tab-pane {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-content: space-between;
     flex-direction: row;
     flex-wrap: wrap;
@@ -395,6 +397,10 @@ function handleUpdateValue(value) {
       border-radius: 5px;
       overflow: hidden;
       margin-bottom: 20px;
+      margin-right: 25px;
+    }
+    .n-card:nth-child(5n) {
+      margin-right: 0;
     }
   }
 }

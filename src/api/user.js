@@ -28,8 +28,8 @@ async function useLoginOut() {
     return await api.useFetch(api.DELETE, getUrl("logout"))
 }
 //更新用户信息
-async function useUpdateUser(data) {
-    return await api.useFetch(api.PUT, getUrl("login"), data)
+async function useUpdateUser(data, func) {
+    return await api.useFetch(api.PUT, getUrl("update"), data, func)
 }
 //获取用户列表
 async function useGetUserList(data) {

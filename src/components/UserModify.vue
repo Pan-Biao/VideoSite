@@ -3,82 +3,61 @@ import { reactive, ref, onMounted, computed, inject, watch } from "vue";
 import VuePictureCropper, { cropper } from "vue-picture-cropper/dist/esm";
 import { useRouter, useRoute } from "vue-router";
 import store from "../store";
-import { useCreateVideo, useUpdateVideo, useGetVideo } from "../api/video";
+import { useUpdateUser } from "../api/user";
+
 //数据
 const d = reactive({
-  modify: false,
   router: useRouter(),
   route: useRoute(),
   uMessage: {
-    avatar: "",
-    title: "",
     info: "",
+    nickname: "",
+    head_portrait: "",
   },
-  generalOptions: [
-    { label: "默认", value: 1 },
-    { label: "动画", value: 2 },
-  ],
   showModal: false,
   upimg: "",
   showimg: "",
-  vname: "",
   fileImg: null,
-  vid: null,
+  uid: 0,
   progress: 0,
 });
-const formRef = ref(null);
-const videoRef = ref(null);
-const showImgRef = ref(null);
 const upimgRef = ref(null);
 const form = reactive({
-  title: "",
   info: "",
-  said: 1,
+  nickname: "",
 });
+
 //监听id变化
-d.modify = d.route.meta["modify"];
-d.vid = d.route.params["vid"];
+d.uid = d.route.params["uid"];
 watch(
   () => {
-    return d.route.params["vid"];
+    return d.route.params["uid"];
   },
   (value) => {
     if (!value) {
-      d.modify = d.route.meta["modify"];
       resetForm();
     }
   }
 );
 //加载完成时
 onMounted(() => {
-  if (d.modify) {
-    getMe().then(() => {
-      if (store.getters.userData.id) {
-        getVideo(d.vid);
-      }
-    });
-  }
-});
-//获取视频信息
-function getVideo(id) {
-  useGetVideo(id).then((res) => {
-    if (res) {
-      form.title = res.title;
-      form.info = res.info;
-      form.said = res.said;
-      d.showimg = store.state.fileApi + res.cover;
+  getMe().then(() => {
+    if (store.getters.userData.id) {
+      d.uMessage = store.getters.userData;
+      form.info = d.uMessage.info;
+      form.nickname = d.uMessage.nickname;
+      d.showimg = d.uMessage.head_portrait
+        ? store.state.fileApi + d.uMessage.head_portrait
+        : "";
     }
   });
-}
+});
 //获取方法
 const getMe = inject("getMe");
-//
+//点击选择图片
 function uploadImg() {
   upimgRef.value.value = "";
   upimgRef.value.click();
-}
-function uploadVideo() {
-  videoRef.value.click();
 }
 // 判断浏览器是否支持 createObjectURL api
 function getObjectURL(file) {
@@ -94,14 +73,17 @@ function getObjectURL(file) {
   }
   return url;
 }
+//图片切换
 function onchangeImg({ target: data }) {
   let file = data.files[0];
   d.upimg = getObjectURL(file);
   d.showModal = true;
 }
+//重置裁剪
 function reset() {
   cropper.reset();
 }
+//裁剪图片处理
 async function getResult() {
   // console.log(cropper)
   // 获取生成的base64图片地址
@@ -127,104 +109,46 @@ async function getResult() {
   // 隐藏裁切弹窗
   d.showModal = false;
 }
-function onchangeVideo({ target: data }) {
-  let file = data.files[0];
-  d.vname = file.name;
-  if (file.type != "video/mp4") {
-    window.$message.error("只能上传mp4格式的视频文件，请重新上传");
-    return;
-  }
-}
-//上传视频
+//上传
 function contributionConfirm() {
+  if (form.nickname == "") {
+    window.$message.error(res.msg);
+  }
   const formData = new FormData();
 
-  form.said = parseInt(form.said);
   Object.keys(form).forEach((key) => {
     formData.append(key, form[key]);
   });
-  let file = videoRef.value.files[0];
-  if (d.modify) {
-    if (file) formData.append("video", file);
-    if (d.fileImg) formData.append("vimg", d.fileImg);
+  formData.append("img", d.fileImg);
 
-    updateContribution(formData);
-  } else {
-    formData.append("video", file);
-    formData.append("vimg", d.fileImg);
-
-    addContribution(formData);
-  }
+  updateUser(formData);
 }
-//新建投稿
-function addContribution(formData) {
-  useCreateVideo(formData, (e) => {
+//修改用户信息
+function updateUser(formData) {
+  useUpdateUser(formData, (e) => {
     let rate = Math.floor((e.loaded / e.total) * 100);
     d.progress = rate;
-  })
-    .then((res) => {
-      if (res) {
-        window.$message.success("视频创建成功");
-        d.router.push({
-          name: "Video",
-          params: {
-            vid: d.vid,
-          },
-        });
-      } else {
-        window.$message.error(res.msg);
-      }
-    })
-    .catch((err) => {
-      d.progress = 0;
-    });
-}
-//修改投稿
-function updateContribution(formData) {
-  useUpdateVideo(d.vid, formData, (e) => {
-    let rate = Math.floor((e.loaded / e.total) * 100);
-    d.progress = rate;
-  })
-    .then((res) => {
-      if (res) {
-        window.$message.success("视频修改成功");
-        d.router.push({
-          name: "Video",
-          params: {
-            vid: d.vid,
-          },
-        });
-      } else {
-        window.$message.error(res.msg);
-      }
-    })
-    .catch((err) => {
-      d.progress = 0;
-    });
+  }).then((res) => {
+    if (res) {
+    }
+  });
 }
 //重置
 function resetForm() {
-  if (d.modify) {
-    getVideo(d.vid);
-  } else {
-    form.title = "";
-    form.info = "";
-    form.said = 1;
-    d.showimg = "";
-    d.upimg = "";
-    d.fileImg = null;
-  }
+  d.uMessage = store.getters.userData;
+  form.info = d.uMessage.info;
+  form.nickname = d.uMessage.nickname;
+  d.showimg = d.uMessage.head_portrait
+    ? store.state.fileApi + d.uMessage.head_portrait
+    : "";
 }
 </script>
 
 <template>
   <div class="contribution">
     <div class="content">
-      <div class="title">
-        {{ d.modify ? `在这里进行一个投稿的修改` : `在这里进行一个视频的投稿` }}
-      </div>
+      <div class="title">在这里进行一个用户的修改</div>
       <n-form
-        ref="formRef"
         :model="form"
         label-placement="left"
         label-width="auto"
@@ -235,19 +159,19 @@ function resetForm() {
           width: '640px',
         }"
       >
-        <n-form-item label="标题" path="title">
+        <n-form-item label="昵称" path="title">
           <n-input
-            maxlength="30"
-            minlength="1"
+            maxlength="8"
+            minlength="2"
             show-count
             clearable
-            v-model:value="form.title"
-            placeholder="标题"
+            v-model:value="form.nickname"
+            placeholder="昵称"
           />
         </n-form-item>
         <n-form-item label="简介" path="info">
           <n-input
-            maxlength="280"
+            maxlength="40"
             show-count
             clearable
             v-model:value="form.info"
@@ -258,30 +182,10 @@ function resetForm() {
             }"
           />
         </n-form-item>
-        <n-form-item label="分区" path="subArea">
-          <n-select
-            clearable
-            v-model:value="form.said"
-            placeholder="请选择分区"
-            :options="d.generalOptions"
-          />
-        </n-form-item>
-        <n-form-item label="上传视频">
-          <n-button @click="uploadVideo">选择视频文件</n-button>
-          <n-ellipsis style="margin-left: 20px">{{ d.vname }}</n-ellipsis>
-          <input
-            v-show="false"
-            @change="onchangeVideo"
-            ref="videoRef"
-            type="file"
-            name="video"
-            accept=".mp4,.avi,.flv"
-          />
-        </n-form-item>
-        <n-form-item label="视频封面">
+        <n-form-item label="头像">
           <div style="flex-direction: column">
             <div class="img" @click="uploadImg">
-              <img :src="d.showimg" ref="showImgRef" alt="" />
+              <img :src="d.showimg" alt="" />
               <div class="text">点击上传图片</div>
             </div>
             <div v-show="d.progress" class="progress">
@@ -308,7 +212,12 @@ function resetForm() {
                 :options="{
                   viewMode: 1,
                   dragMode: 'crop',
-                  aspectRatio: 320 / 210,
+                  aspectRatio: 1,
+                }"
+                :presetMode="{
+                  mode: 'round',
+                  width: 300,
+                  height: 300,
                 }"
               />
               <!-- 图片裁切插件 -->
@@ -329,14 +238,11 @@ function resetForm() {
           />
         </n-form-item>
         <div style="display: flex; justify-content: flex-end">
-          <n-button
-            size="large"
-            style="margin-right: 20px"
-            @click="resetForm"
-            >{{ d.modify ? `重置` : `清空` }}</n-button
-          >
+          <n-button size="large" style="margin-right: 20px" @click="resetForm">
+            重置
+          </n-button>
           <n-button size="large" type="primary" @click="contributionConfirm">
-            {{ d.modify ? `修改` : `投稿` }}
+            修改
           </n-button>
         </div>
       </n-form>
@@ -390,8 +296,8 @@ function resetForm() {
     .img {
       border-radius: 5px;
       border: 1px solid rgba(129, 129, 129, 0.5);
-      width: 320px;
-      height: 230px;
+      width: 200px;
+      height: 220px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -404,7 +310,7 @@ function resetForm() {
       }
       img {
         width: 100%;
-        height: 210px;
+        height: 200px;
       }
       img[src=""],
       img:not([src]) {

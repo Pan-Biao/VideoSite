@@ -9,6 +9,7 @@ import store from "./store/index";
 import { Icon } from "@vicons/utils";
 import { Search, UserCircle } from "@vicons/fa";
 import { useGetMe, useLoginOut } from "./api/user";
+import { Cookies } from "./tool";
 //主数据
 const d = reactive({
   theme: null,
@@ -20,16 +21,10 @@ const d = reactive({
   flag: false,
 });
 provide("reloadView", reloadView);
+provide("getMe", getMe);
+provide("setTheme", setTheme);
 //运行时
-onMounted(() => {
-  useGetMe()
-    .then((res) => {
-      store.dispatch("setUser", res);
-    })
-    .catch((err) => {
-      store.dispatch("setUser", {});
-    });
-});
+onMounted(() => {});
 
 // d.theme = useOsTheme();
 //获取路由元数据
@@ -53,7 +48,6 @@ const options = [
     key: "投稿",
     props: {
       onClick: () => {
-        window.$message.success("我的投稿");
         d.router.push({
           name: "ContributionList",
         });
@@ -65,9 +59,8 @@ const options = [
     key: "修改信息",
     props: {
       onClick: () => {
-        window.$message.success("修改信息");
         d.router.push({
-          name: "Space",
+          name: "UserModify",
           params: {
             uid: store.state.userData.id,
           },
@@ -82,12 +75,12 @@ const options = [
       onClick: () => {
         useLoginOut()
           .then((res) => {
-            window.localStorage.removeItem("state");
             store.dispatch("setUser", {});
+            Cookies.remove("X-Token");
             reloadView();
           })
           .catch((err) => {
-            window.localStorage.removeItem("state");
+            Cookies.remove("X-Token");
             reloadView();
           });
       },
@@ -132,6 +125,7 @@ function avaterClick() {
   }
 }
 function logo() {
+  reloadView();
   d.router.push({
     name: "Home",
   });
@@ -149,6 +143,20 @@ function reloadView() {
   nextTick(() => {
     d.isRouterAlive = true;
   });
+}
+// 获取用户数据
+async function getMe() {
+  return useGetMe()
+    .then((res) => {
+      store.dispatch("setUser", res);
+    })
+    .catch((err) => {
+      store.dispatch("setUser", {});
+    });
+}
+//设置主题
+function setTheme() {
+  d.theme = null;
 }
 </script>
 
@@ -201,7 +209,9 @@ function reloadView() {
                 :size="40"
                 v-if="store.getters.userData.head_portrait"
                 @click="avaterClick"
-                :src="`${store.state.assetsApi}${store.getters.userData.head_portrait}`"
+                :src="
+                  store.state.fileApi + store.getters.userData.head_portrait
+                "
               />
               <n-icon
                 style="cursor: pointer; margin-right: 40px"

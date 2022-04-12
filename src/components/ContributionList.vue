@@ -1,13 +1,12 @@
 <script setup>
-import { reactive, watchEffect } from "vue";
-import { useGetVideoList } from "../api/video";
+import { reactive, watchEffect, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useGetVideoList } from "../api/video";
 import { time } from "../tool";
 import store from "../store/index";
 
 const d = reactive({
   route: useRoute(),
-  searchValue: "",
   router: useRouter(),
   list: [],
   vlist: [
@@ -33,34 +32,25 @@ const d = reactive({
     },
   ],
 });
-//跳转UP
-function jumpUp(id) {
-  d.router.push({
-    name: "Space",
-    params: {
-      uid: id,
-    },
-  });
-}
+
 //视频跳转
 function jumpVideo(id) {
   d.router.push({
-    name: "Video",
+    name: "ContributionModify",
     params: {
       vid: id,
     },
   });
 }
-watchEffect(() => {
-  d.searchValue = d.route.params.value;
-  let temp = d.searchValue ? d.searchValue.split(/\s+/) : [];
+
+onMounted(() => {
   useGetVideoList({
     number: 20,
     page_number: 1,
-    searchs: temp,
+    uid: store.getters.userData.id,
     sorts: [
       {
-        field: "like_number",
+        field: "created_at",
         sort: "desc",
       },
     ],
@@ -88,8 +78,8 @@ watchEffect(() => {
             {{ item.title }}
           </n-ellipsis>
         </div>
-        <div @click="jumpUp(item.user.id)" class="up">
-          {{ `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}` }}
+        <div class="up">
+          {{ `${item.user.nickname}  ${time(item.created_at)}` }}
         </div>
       </div>
     </n-card>
@@ -156,9 +146,6 @@ watchEffect(() => {
     margin-bottom: 5px;
     color: rgb(175, 175, 175);
     cursor: pointer;
-  }
-  .up:hover {
-    color: rgb(0, 132, 255);
   }
 }
 </style>

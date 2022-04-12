@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, onMounted, h } from "vue";
+import { reactive, ref, onMounted, h,inject } from "vue";
 import store from "../../store";
 import { useRoute, useRouter, RouterLink } from "vue-router";
 import { NIcon } from "naive-ui";
@@ -9,7 +9,7 @@ import { ChalkboardTeacher, User, Video, ThLarge } from "@vicons/fa";
 const d = reactive({
   router: useRouter(),
 });
-
+const setTheme = inject("setTheme") 
 //运行时
 onMounted(() => {
   if (!store.getters.userData.root) {
@@ -18,6 +18,7 @@ onMounted(() => {
       name: "Login",
     });
   }
+  setTheme()
 });
 function renderIcon(icon) {
   return () => h(NIcon, null, { default: () => h(icon) });
