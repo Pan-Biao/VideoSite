@@ -94,8 +94,8 @@ const options = [
                 nickname: "",
                 head_portrait: "",
               });
-              window.$message.success("退出登录成功")
-              reloadView()
+              window.$message.success("退出登录成功");
+              reloadView();
             }
           });
         }

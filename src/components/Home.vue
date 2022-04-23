@@ -214,7 +214,7 @@ function handleUpdateValue(value) {
           class="carousel-img"
           v-for="item in d.carouselList"
           :key="item.id"
-          :src="store.state.fileApi + item.cover"
+          :src="item.cover != '' ? store.state.fileApi + item.cover : ''"
         />
       </n-carousel>
       <div @click="jumpLink(d.carouselData)" class="title">
@@ -232,7 +232,7 @@ function handleUpdateValue(value) {
           <img
             @click="jumpVideo(item.id)"
             class="vimg"
-            :src="store.state.fileApi + item.cover"
+            :src="item.cover != '' ? store.state.fileApi + item.cover : ''"
           />
           <div @click="jumpVideo(item.id)" class="title">
             <n-ellipsis :line-clamp="2">
@@ -275,7 +275,7 @@ function handleUpdateValue(value) {
             <img
               @click="jumpVideo(item.id)"
               class="vimg"
-              :src="store.state.fileApi + item.cover"
+              :src="item.cover != '' ? store.state.fileApi + item.cover : ''"
             />
             <div @click="jumpVideo(item.id)" class="title">
               <n-ellipsis :line-clamp="2">
@@ -298,6 +298,10 @@ function handleUpdateValue(value) {
 </template>
 
 <style lang="less" scoped>
+img[src=""],
+img:not([src]) {
+  opacity: 0;
+}
 .recommend {
   margin: 20px 100px;
   display: flex;
