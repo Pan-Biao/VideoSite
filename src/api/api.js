@@ -56,6 +56,9 @@ function useFetch(type, url, parameter) {
                     window.$message.error(res.msg);
                     store.dispatch("setUser", {})
                     reject(res)
+                } else if (res.code == 77777 || res.code == 66666) {
+                    window.$message.info(res.msg);
+                    reject(res)
                 } else {
                     window.$message.error(res.msg);
                     reject(res)
@@ -65,7 +68,7 @@ function useFetch(type, url, parameter) {
 }
 
 //formData获取
-function useFetchFormData(type, url, formData, func) {
+function useFetchFormData(type, url, formData, func, cancelToken) {
 
     let http = null
 
@@ -87,6 +90,16 @@ function useFetchFormData(type, url, formData, func) {
     }
 
     function rehttp() {
+        if (cancelToken && formData) {
+            return http(url, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data;charset=UTF-8",
+                },
+                cancelToken,
+                timeout: 0,
+                onUploadProgress: func
+            })
+        }
         if (formData) {
             return http(url, formData, {
                 headers: {
@@ -109,6 +122,10 @@ function useFetchFormData(type, url, formData, func) {
     return rehttp()
         .catch(err => {
             console.log(err)
+            if (err.message) {
+                window.$message.error(err.message);
+                return
+            }
             window.$message.error("无法连接服务器");
         })
         .then((res) => {
@@ -121,7 +138,11 @@ function useFetchFormData(type, url, formData, func) {
                     window.$message.error(res.msg);
                     store.dispatch("setUser", {})
                     reject(res)
-                } else {
+                } else if (res.code == 77777 || res.code == 66666) {
+                    window.$message.info(res.msg);
+                    reject(res)
+                }
+                else {
                     window.$message.error(res.msg);
                     reject(res)
                 }

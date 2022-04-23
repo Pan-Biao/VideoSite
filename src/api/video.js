@@ -20,16 +20,20 @@ async function useGetVideoList(data) {
     return await api.useFetch(api.POST, getUrl("list"), data)
 }
 //创建视频
-async function useCreateVideo(data, func) {
-    return await api.useFetchFormData(api.POST, getUrl("create"), data, func)
+async function useCreateVideo(data, func, cancelToken) {
+    return await api.useFetchFormData(api.POST, getUrl("create"), data, func, cancelToken)
 }
 //更新视频
-async function useUpdateVideo(id, data, func) {
-    return await api.useFetchFormData(api.PUT, getUrl(id), data, func)
+async function useUpdateVideo(id, data, func, cancelToken) {
+    return await api.useFetchFormData(api.PUT, getUrl(id), data, func, cancelToken)
 }
 //删除视频
-async function useDeleteVideo(id, data) {
-    return await api.useFetch(api.DELETE, getUrl(id), data)
+async function useDeleteVideo(id) {
+    return await api.useFetch(api.DELETE, getUrl(id))
+}
+//获取视频列表
+async function useGetRootVideoList(data) {
+    return await api.useFetch(api.POST, getUrlRoot("list"), data)
 }
 //禁用视频
 async function useVideoSuspend(id) {
@@ -40,7 +44,7 @@ async function useVideoUnseal(id) {
     return await api.useFetch(api.POST, getUrlRoot(["unseal", id].join("/")))
 }
 
-export { useGetVideo, usePlayVideo, useGetVideoList, useCreateVideo, useUpdateVideo, useDeleteVideo, useVideoUnseal, useVideoSuspend }
+export { useGetVideo, usePlayVideo, useGetVideoList, useCreateVideo, useUpdateVideo, useDeleteVideo, useVideoUnseal, useVideoSuspend, useGetRootVideoList }
 
 
 

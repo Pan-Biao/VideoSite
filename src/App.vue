@@ -8,7 +8,7 @@ import messageApi from "./tool/message-api.vue";
 import store from "./store/index";
 import { Icon } from "@vicons/utils";
 import { Search, UserCircle } from "@vicons/fa";
-import { useGetMe, useLoginOut } from "./api/user";
+import { useGetMe, useLoginOut, useRefreshToken } from "./api/user";
 import { Cookies } from "./tool";
 //主数据
 const d = reactive({
@@ -24,7 +24,16 @@ provide("reloadView", reloadView);
 provide("getMe", getMe);
 provide("setTheme", setTheme);
 //运行时
-onMounted(() => {});
+onMounted(() => {
+  if (Cookies.get("X-Token")) {
+    getMe().then((res) => {
+      useRefreshToken().then((res) => {
+        let day = new Date(res.token_expire).getDay();
+        Cookies.set("X-Token", res.token, { expires: day });
+      });
+    });
+  }
+});
 
 // d.theme = useOsTheme();
 //获取路由元数据
@@ -73,16 +82,23 @@ const options = [
     key: "退出登录",
     props: {
       onClick: () => {
-        useLoginOut()
-          .then((res) => {
-            store.dispatch("setUser", {});
-            Cookies.remove("X-Token");
-            reloadView();
-          })
-          .catch((err) => {
-            Cookies.remove("X-Token");
-            reloadView();
+        if (store.getters.userData.id) {
+          useLoginOut().then((res) => {
+            if (res) {
+              Cookies.remove("X-Token");
+              //用户数据初始化
+              store.dispatch("setUser", {
+                id: 0,
+                info: "",
+                root: false,
+                nickname: "",
+                head_portrait: "",
+              });
+              window.$message.success("退出登录成功")
+              reloadView()
+            }
           });
+        }
       },
     },
   },

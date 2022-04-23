@@ -86,7 +86,6 @@ const d = reactive({
 const getMe = inject("getMe");
 //运行时
 onMounted(() => {
-  getMe();
   //获取轮播图
   getCarouselList();
   //获取推荐视频列表
@@ -152,21 +151,33 @@ function checkedCarousel(currentIndex, lastIndex) {
     : "";
 }
 //视频跳转
-function jumpVideo(v) {
-  console.log(v.id);
-  d.router.push({
+
+// function jumpVideo(id) {
+//   console.log(v.id);
+//   d.router.push({
+//     name: "Video",
+//     params: {
+//       vid: id,
+//     },
+//   });
+// }
+
+//跳转视频页(打开新页面)
+function jumpVideo(id) {
+  let router = d.router.resolve({
     name: "Video",
     params: {
-      vid: v.id,
+      vid: id,
     },
   });
+  window.open(router.href, "_blank");
 }
 //跳转UP
-function jumpUp(up) {
+function jumpUp(id) {
   d.router.push({
     name: "Space",
     params: {
-      uid: up.id,
+      uid: id,
     },
   });
 }
@@ -219,17 +230,21 @@ function handleUpdateValue(value) {
       >
         <div class="frame">
           <img
-            @click="jumpVideo(item)"
+            @click="jumpVideo(item.id)"
             class="vimg"
             :src="store.state.fileApi + item.cover"
           />
-          <div @click="jumpVideo(item)" class="title">
+          <div @click="jumpVideo(item.id)" class="title">
             <n-ellipsis :line-clamp="2">
               {{ item.title }}
             </n-ellipsis>
           </div>
-          <div @click="jumpUp(item.user)" class="up">
-            {{ `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}` }}
+          <div @click="jumpUp(item.user.id)" class="up">
+            {{
+              `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(
+                item.created_at
+              )}`
+            }}
           </div>
         </div>
       </n-card>
@@ -258,17 +273,21 @@ function handleUpdateValue(value) {
         >
           <div class="frame">
             <img
-              @click="jumpVideo(item)"
+              @click="jumpVideo(item.id)"
               class="vimg"
               :src="store.state.fileApi + item.cover"
             />
-            <div @click="jumpVideo(item)" class="title">
+            <div @click="jumpVideo(item.id)" class="title">
               <n-ellipsis :line-clamp="2">
                 {{ item.title }}
               </n-ellipsis>
             </div>
-            <div @click="jumpUp(item)" class="up">
-              {{ `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}` }}
+            <div @click="jumpUp(item.user.id)" class="up">
+              {{
+                `${item.user.nickname}&nbsp;&nbsp;&nbsp;&nbsp;${time(
+                  item.created_at
+                )}`
+              }}
             </div>
           </div>
         </n-card>

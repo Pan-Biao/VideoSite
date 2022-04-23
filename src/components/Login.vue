@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import message from "../tool/message-api.vue";
 import store from "../store/index";
@@ -16,6 +16,19 @@ const d = reactive({
   router: useRouter(),
 });
 
+onMounted(() => {
+  d.checked = !!window.localStorage.getItem("protocol");
+});
+
+function protocolChange(value) {
+  if (value) {
+    d.checked = value;
+    window.localStorage.setItem("protocol", true);
+  } else {
+    d.checked = value;
+    window.localStorage.removeItem("protocol");
+  }
+}
 function handleClickProtocol() {
   console.log("《用户协议》");
 }
@@ -26,6 +39,10 @@ function register() {
   d.isLgoin = !d.isLgoin;
 }
 function confirm() {
+  if (!d.checked) {
+    window.$message.info("请勾选用户协议和隐私权政策");
+    return;
+  }
   if (d.isLgoin) {
     useLogin({
       user_name: d.userName,
@@ -103,7 +120,9 @@ function confirm() {
               :minlength="6"
             />
             <div class="w-full text-14px">
-              <n-checkbox v-model:checked="d.checked"
+              <n-checkbox
+                @update:checked="protocolChange"
+                v-model:checked="d.checked"
                 >我已经仔细阅读并接受</n-checkbox
               >
               <n-button :text="true" type="primary" @click="handleClickProtocol"

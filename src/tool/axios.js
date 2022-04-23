@@ -6,7 +6,7 @@ import store from "../store/index";
 import { Cookies } from "../tool";
 
 //数据请求字符
-axios.defaults.baseURL = process.env.BASE_API2,
+axios.defaults.baseURL = process.env.BASE_API,
     // 如果请求话费了超过 `timeout` 的时间，请求将被中断
     axios.defaults.timeout = 5000;
 // 表示跨域请求时是否需要使用凭证

@@ -1,8 +1,8 @@
 <script setup>
-import { reactive, watchEffect, onMounted } from "vue";
+import { reactive, watchEffect, onMounted, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useGetVideoList } from "../api/video";
-import { time } from "../tool";
+import { useGetVideoList, useDeleteVideo } from "../api/video";
+import { time, formatNumber } from "../tool";
 import store from "../store/index";
 
 const d = reactive({
@@ -42,8 +42,15 @@ function jumpVideo(id) {
     },
   });
 }
-
-onMounted(() => {
+function deleteContribution(id, index) {
+  useDeleteVideo(id).then((res) => {
+    if (res) {
+      d.vlist.splice(index, 1);
+    }
+  });
+}
+//
+function getVideoList() {
   useGetVideoList({
     number: 20,
     page_number: 1,
@@ -55,12 +62,26 @@ onMounted(() => {
       },
     ],
   }).then((res) => {
-    d.vlist = res.videos;
+    if (store.getters.userData.id) {
+      d.vlist = res.videos;
+    } else {
+      d.vlist = [];
+    }
   });
+}
+//获取方法
+const getMe = inject("getMe");
+
+onMounted(() => {
+  if (store.getters.userData.id) {
+    getVideoList();
+  }else{
+    d.vlist = []
+  }
 });
 </script>
 <template>
-  <div class="searchFrame">
+  <div class="ListFrame">
     <n-card
       content-style="padding: 0;"
       class="card"
@@ -79,8 +100,15 @@ onMounted(() => {
           </n-ellipsis>
         </div>
         <div class="up">
-          {{ `${item.user.nickname}  ${time(item.created_at)}` }}
+          <p>
+            {{
+              `点赞&nbsp;${formatNumber(item.like_number)}&nbsp;&nbsp;
+              播放&nbsp;${formatNumber(item.play_number)}`
+            }}
+          </p>
+          <p>{{ `时间&nbsp;${time(item.created_at)}` }}</p>
         </div>
+        <div class="delete" @click="deleteContribution(item.id)">删除</div>
       </div>
     </n-card>
   </div>
@@ -88,7 +116,7 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
-.searchFrame {
+.ListFrame {
   display: flex;
   justify-content: flex-start;
   align-content: space-between;
@@ -100,7 +128,7 @@ onMounted(() => {
   .n-card {
     margin-right: 25px;
     width: calc(20% - 20px);
-    height: calc((36vw - 120px) / 2);
+    height: calc((36vw - 95px) / 2);
     min-height: 170px;
     border-radius: 5px;
     overflow: hidden;
@@ -116,7 +144,22 @@ onMounted(() => {
   justify-items: center;
   flex-direction: column;
   justify-content: space-between;
-
+  .delete {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    cursor: pointer;
+    line-height: 12px;
+    height: 12px;
+    font-size: 12px;
+    padding: 5px;
+    border: 1px solid #00b576;
+    border-radius: 5px;
+  }
+  .delete:hover {
+    background-color: #00b576;
+    padding: 4px;
+  }
   .vimg {
     width: 100%;
     height: calc((36vw - 120px - 140px) / 2);
@@ -140,12 +183,15 @@ onMounted(() => {
   }
   .up {
     font-size: 12px;
-    line-height: 12px;
-    min-height: 12px;
+    line-height: 15px;
+    min-height: 30px;
     margin: 0 5px;
     margin-bottom: 5px;
     color: rgb(175, 175, 175);
-    cursor: pointer;
+    p {
+      padding: 0;
+      margin: 0;
+    }
   }
 }
 </style>

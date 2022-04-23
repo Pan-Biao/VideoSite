@@ -1,13 +1,23 @@
 <!DOCTYPE html>
 <html lang="cn">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <!--移动端适配-->
+  <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+  <!--这meta的作用就是删除默认的苹果工具栏和菜单栏-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!--默认值为default（白色），可以定为black（黑色）和black-translucent（灰色半透明）。-->
+  <!--注意： 若值为“black-translucent”将会占据页面px位置，浮在页面上方（会覆盖页面20px高度–iphone4和itouch4的Retina屏幕为40px）。-->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- <meta name="apple-mobile-web-app-status-bar-style" content="black"> -->
+  <title>Vite App</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

@@ -43,13 +43,23 @@ function jumpUp(id) {
   });
 }
 //视频跳转
+// function jumpVideo(id) {
+//   d.router.push({
+//     name: "Video",
+//     params: {
+//       vid: id,
+//     },
+//   });
+// }
+//跳转视频页
 function jumpVideo(id) {
-  d.router.push({
+  let router = d.router.resolve({
     name: "Video",
     params: {
       vid: id,
     },
   });
+  window.open(router.href, "_blank");
 }
 watchEffect(() => {
   d.searchValue = d.route.params.value;

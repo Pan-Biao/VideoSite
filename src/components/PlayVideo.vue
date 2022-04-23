@@ -3,7 +3,7 @@ import { reactive, ref, onMounted, nextTick, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import store from "../store";
 import DPlayer from "dplayer";
-import { time } from "../tool";
+import { time, formatNumber } from "../tool";
 import { useGetVideo, usePlayVideo } from "../api/video";
 import { useCreateFollow, useDeleteFollow, useIsFollow } from "../api/follow";
 import {
@@ -95,14 +95,12 @@ onMounted(() => {
   // DOM 元素将在初始渲染后分配给 ref
   const vid = d.route.params["vid"];
   d.vid = +vid;
-  getMe().then(() => {
-    getListFavorite();
-    getVideo(d.vid).then(() => {
-      findFollow(d.uMessage.id);
-      findLikeVideo(d.vMessage.id);
-      findCollection(d.vMessage.id);
-      getCommentList();
-    });
+  getListFavorite();
+  getVideo(d.vid).then(() => {
+    findFollow(d.uMessage.id);
+    findLikeVideo(d.vMessage.id);
+    findCollection(d.vMessage.id);
+    getCommentList();
   });
 });
 //获取视频
@@ -154,10 +152,18 @@ function findCollection(id) {
   }
 }
 //收藏视频
-function videoCollection() {
-  if (store.getters.userData.id) {
-    d.popselectShow = true;
-    getListFavorite();
+function videoCollection(id) {
+  if (d.isCollection) {
+    useDeleteCollection(id).then((res) => {
+      if (res) {
+        d.isCollection = false;
+      }
+    });
+  } else {
+    if (store.getters.userData.id) {
+      d.popselectShow = true;
+      getListFavorite();
+    }
   }
 }
 //选择收藏夹
@@ -166,7 +172,7 @@ function clickFolder(id) {
     cid: d.vMessage.id,
     fid: 0,
   };
-  if (!id) {
+  if (id != 0) {
     data.fid = id;
   }
   useCreateCollection(data).then((res) => {
@@ -190,14 +196,6 @@ function getListFavorite() {
       }
     });
   }
-}
-//不收藏视频
-function unVideoCollection(id) {
-  useDeleteCollection(id).then((res) => {
-    if (res) {
-      d.isCollection = false;
-    }
-  });
 }
 //新建收藏夹
 function addFolder() {
@@ -268,6 +266,10 @@ function handleUpdateValue(value) {
 }
 //发表评论
 function addComment(value) {
+  if (value.length == 0) {
+    window.$message.info("评论不可为空");
+    return;
+  }
   useCreateComment(d.vid, {
     comment: value,
   }).then((res) => {
@@ -285,15 +287,15 @@ function deleteComment(id) {
 }
 //关注
 function follow(id) {
-  useCreateFollow(id).then((res) => {
-    if (res) d.isFollow = true;
-  });
-}
-//不关注
-function notFollow(id) {
-  useDeleteFollow(id).then((res) => {
-    if (res) d.isFollow = false;
-  });
+  if (d.isFollow) {
+    useDeleteFollow(id).then((res) => {
+      if (res) d.isFollow = false;
+    });
+  } else {
+    useCreateFollow(id).then((res) => {
+      if (res) d.isFollow = true;
+    });
+  }
 }
 //查询关注
 function findFollow(id) {
@@ -313,21 +315,21 @@ function findLikeVideo(id) {
 }
 //点赞视频
 function likeVideo(id) {
-  useLikeVideo(id).then((res) => {
-    if (res) {
-      d.isLike = true;
-      d.vMessage.like_number = d.vMessage.like_number + 1;
-    }
-  });
-}
-//不点赞视频
-function unLikeVideo(id) {
-  useUnLikeVideo(id).then((res) => {
-    if (res) {
-      d.isLike = false;
-      d.vMessage.like_number = d.vMessage.like_number - 1;
-    }
-  });
+  if (d.isLike) {
+    useUnLikeVideo(id).then((res) => {
+      if (res) {
+        d.isLike = false;
+        d.vMessage.like_number = d.vMessage.like_number - 1;
+      }
+    });
+  } else {
+    useLikeVideo(id).then((res) => {
+      if (res) {
+        d.isLike = true;
+        d.vMessage.like_number = d.vMessage.like_number + 1;
+      }
+    });
+  }
 }
 //查询点赞评论
 function findLikeComment(type, id) {
@@ -377,9 +379,10 @@ function unLikeComment(id) {
         <div class="v_title">{{ d.vMessage.title }}</div>
         <div class="v_time">
           {{
-            `播放量 ${d.vMessage.play_number} 点赞量 ${
-              d.vMessage.like_number
-            } 评论 ${d.comments.length} ${time(d.vMessage.created_at)}`
+            `播放量&nbsp;${formatNumber(d.vMessage.play_number)}&nbsp;&nbsp;
+            点赞量&nbsp;${formatNumber(d.vMessage.like_number)}&nbsp;&nbsp;
+            评论&nbsp;${d.comments.length}&nbsp;&nbsp;
+            ${time(d.vMessage.created_at)}`
           }}
         </div>
       </div>
@@ -409,24 +412,17 @@ function unLikeComment(id) {
             </n-ellipsis>
           </div>
           <!-- 关注 -->
-          <n-button
-            v-show="store.getters.userData.id && !d.isFollow"
-            type="info"
-            size="tiny"
-            ghost
-            @click="follow(d.uMessage.id)"
-          >
-            关注
-          </n-button>
-          <n-button
-            v-show="store.getters.userData.id && d.isFollow"
-            type="info"
-            size="tiny"
-            ghost
-            @click="notFollow(d.uMessage.id)"
-          >
-            取消关注
-          </n-button>
+          <template v-if="store.getters.userData.id != d.uMessage.id">
+            <n-button
+              v-show="store.getters.userData.id"
+              type="info"
+              size="tiny"
+              ghost
+              @click="follow(d.uMessage.id)"
+            >
+              {{ d.isFollow ? "取消关注" : "关注" }}
+            </n-button>
+          </template>
         </div>
       </div>
     </div>
@@ -438,13 +434,7 @@ function unLikeComment(id) {
       <div class="v_menu_item">
         <n-icon
           @click="likeVideo(d.vMessage.id)"
-          v-show="!d.isLike"
-          :component="ThumbsUp"
-        />
-        <n-icon
-          @click="unLikeVideo(d.vMessage.id)"
-          v-show="d.isLike"
-          class="islike"
+          :class="d.isLike ? 'islike' : ''"
           :component="ThumbsUp"
         />
       </div>
@@ -458,16 +448,9 @@ function unLikeComment(id) {
         >
           <div class="collection">
             <n-icon
-              @click="videoCollection()"
+              @click="videoCollection(d.vMessage.id)"
               size="30"
-              v-show="!d.isCollection"
-              :component="Star"
-            />
-            <n-icon
-              @click="unVideoCollection(d.vMessage.id)"
-              size="30"
-              v-show="d.isCollection"
-              class="islike"
+              :class="d.isCollection ? 'islike' : ''"
               :component="Star"
             />
           </div>
@@ -715,7 +698,7 @@ textarea {
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-between;
-        border-bottom: 1px solid #e9e9e9;
+        border-bottom: 1px solid var(--n-tab-border-color);
         .n-avatar {
           cursor: pointer;
           margin-top: 10px;
@@ -763,8 +746,8 @@ textarea {
   }
 }
 .v_info {
+  margin: 0 5px;
   margin-top: 10px;
-  width: 100%;
   line-height: 24px;
   .n-ellipsis {
     max-width: 100%;
@@ -862,7 +845,6 @@ textarea {
   justify-content: space-between;
 }
 .u_message {
-  width: 200px;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
@@ -876,13 +858,15 @@ textarea {
       cursor: pointer;
     }
     .u_title {
-      min-width: 100px;
-      font-size: 20px;
+      min-width: 150px;
+      font-size: 17px;
       cursor: pointer;
     }
     .u_info {
-      width: 100%;
+      max-width: 180px;
       margin-bottom: 5px;
+      font-size: 12px;
+      color: rgb(175, 175, 175);
       .n-ellipsis {
         max-width: 100%;
       }

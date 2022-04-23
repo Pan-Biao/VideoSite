@@ -2,7 +2,7 @@
 import { reactive, ref, onMounted, nextTick } from "vue";
 import store from "../../store";
 import {
-  useGetVideoList,
+  useGetRootVideoList,
   useVideoSuspend,
   useVideoUnseal,
 } from "../../api/video";
@@ -27,7 +27,7 @@ nextTick(() => {
 //获取数据
 const getList = () => {
   let temp = table.search ? table.search.split(/\s+/) : [];
-  return useGetVideoList({
+  return useGetRootVideoList({
     number: table.pageSize,
     page_number: table.currentPage,
     searchs: temp,

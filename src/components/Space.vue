@@ -2,7 +2,7 @@
 import { reactive, ref, onMounted, inject, nextTick, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGetUserInformation } from "../api/user";
-import { time } from "../tool";
+import { time, formatNumber } from "../tool";
 import store from "../store";
 import {
   useGetFollower,
@@ -125,9 +125,7 @@ watch(
 //运行时
 onMounted(() => {
   // DOM 元素将在初始渲染后分配给 ref
-  getMe().then(() => {
-    init();
-  });
+  init();
 });
 function init() {
   getUserData(d.uid);
@@ -167,13 +165,23 @@ function jumpUp(id) {
   });
 }
 //视频跳转
+// function jumpVideo(id) {
+//   d.router.push({
+//     name: "Video",
+//     params: {
+//       vid: id,
+//     },
+//   });
+// }
+//跳转视频页
 function jumpVideo(id) {
-  d.router.push({
+  let router = d.router.resolve({
     name: "Video",
     params: {
       vid: id,
     },
   });
+  window.open(router.href, "_blank");
 }
 //查询关注
 function findFollow(id) {
@@ -185,7 +193,7 @@ function findFollow(id) {
 }
 //不关注
 function follow(id, index) {
-  if (index) {
+  if (index != null) {
     if (d.followsAndFans[index].isFollow) {
       useDeleteFollow(id).then((res) => {
         if (res) d.followsAndFans[index].isFollow = false;
@@ -403,11 +411,9 @@ function closeModal() {
                   </div>
                   <div class="message">
                     {{
-                      `播放量&nbsp;${
-                        item.like_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;点赞量&nbsp;${
-                        item.play_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}`
+                      `播放量&nbsp;${formatNumber(item.play_number)}
+                      &nbsp;&nbsp;点赞量&nbsp;${formatNumber(item.like_number)}
+                      &nbsp;&nbsp;${time(item.created_at)}`
                     }}
                   </div>
                 </div>
@@ -435,11 +441,9 @@ function closeModal() {
                   </div>
                   <div class="message">
                     {{
-                      `播放量&nbsp;${
-                        item.like_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;点赞量&nbsp;${
-                        item.play_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}`
+                      `播放量&nbsp;${formatNumber(item.play_number)}
+                      &nbsp;&nbsp;点赞量&nbsp;${formatNumber(item.like_number)}
+                      &nbsp;&nbsp;${time(item.created_at)}`
                     }}
                   </div>
                 </div>
@@ -502,11 +506,9 @@ function closeModal() {
                   </div>
                   <div class="message">
                     {{
-                      `播放量&nbsp;${
-                        item.like_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;点赞量&nbsp;${
-                        item.play_number
-                      }&nbsp;&nbsp;&nbsp;&nbsp;${time(item.created_at)}`
+                      `播放量&nbsp;${formatNumber(item.play_number)}&nbsp;&nbsp;
+                      点赞量&nbsp;${formatNumber(item.like_number)}&nbsp;&nbsp;
+                      ${time(item.created_at)}`
                     }}
                   </div>
                 </div>
@@ -545,18 +547,16 @@ function closeModal() {
                   {{ item.user.nickname }}
                 </div>
                 <div class="info">
-                  <n-ellipsis :tooltip="false" style="max-width: 200px">
+                  <n-ellipsis :tooltip="false" style="max-width: 150px">
                     {{ item.user.info }}</n-ellipsis
                   >
                 </div>
               </div>
-              <div
-                class="follow"
-                v-if="store.getters.userData.id == d.uid"
-                @click="follow(item.user.id, index)"
-              >
-                {{ item.isFollow ? "取消关注" : "关注" }}
-              </div>
+              <template v-if="store.getters.userData.id == d.uid">
+                <div class="follow" @click="follow(item.user.id, index)">
+                  {{ item.isFollow ? "取消关注" : "关注" }}
+                </div>
+              </template>
             </div>
           </n-tab-pane>
           <n-tab-pane :name="1" tab="粉丝">
@@ -714,7 +714,6 @@ function closeModal() {
         }
       }
       .video_list {
-        width: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;

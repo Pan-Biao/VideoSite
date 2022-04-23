@@ -15,6 +15,10 @@ async function useGetUserInformation(id) {
 async function useGetMe() {
     return await api.useFetch(api.GET, getUrl("me"))
 }
+//刷新token
+async function useRefreshToken() {
+    return await api.useFetch(api.POST, getUrl("refresh"))
+}
 //注册
 async function useRegister(data) {
     return await api.useFetch(api.POST, getUrl("register"), data)
@@ -29,7 +33,7 @@ async function useLoginOut() {
 }
 //更新用户信息
 async function useUpdateUser(data, func) {
-    return await api.useFetch(api.PUT, getUrl("update"), data, func)
+    return await api.useFetchFormData(api.PUT, getUrl("update"), data, func)
 }
 //获取用户列表
 async function useGetUserList(data) {
@@ -44,7 +48,7 @@ async function useUserUnseal(id) {
     return await api.useFetch(api.POST, getUrlRoot(["unseal", id].join("/")))
 }
 export {
-    useGetUserInformation, useGetMe, useRegister, useLogin, useLoginOut, useUpdateUser, useUserSuspend, useUserUnseal, useGetUserList
+    useGetUserInformation, useGetMe, useRegister, useLogin, useLoginOut, useUpdateUser, useUserSuspend, useUserUnseal, useGetUserList, useRefreshToken
 }
 
 

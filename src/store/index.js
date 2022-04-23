@@ -3,7 +3,7 @@ import { createStore } from "vuex";
 import request from '../tool/axios';
 import { useGetMe } from "../api/user"
 
-const api = process.env.BASE_API2
+const api = process.env.BASE_API
 
 export default createStore({
     // 声明变量

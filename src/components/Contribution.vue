@@ -4,6 +4,7 @@ import VuePictureCropper, { cropper } from "vue-picture-cropper/dist/esm";
 import { useRouter, useRoute } from "vue-router";
 import store from "../store";
 import { useCreateVideo, useUpdateVideo, useGetVideo } from "../api/video";
+import { CancelToken } from "axios";
 //数据
 const d = reactive({
   modify: false,
@@ -25,6 +26,8 @@ const d = reactive({
   fileImg: null,
   vid: null,
   progress: 0,
+  isUpload: false,
+  cancel: null,
 });
 const formRef = ref(null);
 const videoRef = ref(null);
@@ -52,11 +55,9 @@ watch(
 //加载完成时
 onMounted(() => {
   if (d.modify) {
-    getMe().then(() => {
-      if (store.getters.userData.id) {
-        getVideo(d.vid);
-      }
-    });
+    if (store.getters.userData.id) {
+      getVideo(d.vid);
+    }
   }
 });
 //获取视频信息
@@ -155,51 +156,66 @@ function contributionConfirm() {
 
     addContribution(formData);
   }
+  d.isUpload = true;
 }
 //新建投稿
 function addContribution(formData) {
-  useCreateVideo(formData, (e) => {
-    let rate = Math.floor((e.loaded / e.total) * 100);
-    d.progress = rate;
-  })
+  useCreateVideo(
+    formData,
+    (e) => {
+      let rate = Math.floor((e.loaded / e.total) * 100);
+      d.progress = rate;
+    },
+    new CancelToken(function executor(c) {
+      // executor 函数接收一个 cancel 函数作为参数
+      d.cancel = c;
+    })
+  )
     .then((res) => {
       if (res) {
-        window.$message.success("视频创建成功");
-        d.router.push({
-          name: "Video",
-          params: {
-            vid: d.vid,
-          },
-        });
+        window.$message.success(
+          "视频创建成功，可点击查看视频按钮跳转到视频页查看"
+        );
+        d.vid = res.id;
+        d.isUpload = false;
       } else {
+        d.isUpload = false;
         window.$message.error(res.msg);
       }
     })
     .catch((err) => {
       d.progress = 0;
+      d.isUpload = false;
     });
 }
 //修改投稿
 function updateContribution(formData) {
-  useUpdateVideo(d.vid, formData, (e) => {
-    let rate = Math.floor((e.loaded / e.total) * 100);
-    d.progress = rate;
-  })
+  useUpdateVideo(
+    d.vid,
+    formData,
+    (e) => {
+      let rate = Math.floor((e.loaded / e.total) * 100);
+      d.progress = rate;
+    },
+    new CancelToken(function executor(c) {
+      // executor 函数接收一个 cancel 函数作为参数
+      d.cancel = c;
+    })
+  )
     .then((res) => {
       if (res) {
-        window.$message.success("视频修改成功");
-        d.router.push({
-          name: "Video",
-          params: {
-            vid: d.vid,
-          },
-        });
+        window.$message.success(
+          "视频修改成功，可点击查看视频按钮跳转到视频页查看"
+        );
+        d.isUpload = false;
       } else {
+        d.isUpload = false;
         window.$message.error(res.msg);
       }
     })
     .catch((err) => {
       d.progress = 0;
+      d.isUpload = false;
     });
 }
 //重置
@@ -215,9 +231,46 @@ function resetForm() {
     d.fileImg = null;
   }
 }
+//跳转视频页
+function jumpVideo() {
+  let router = d.router.resolve({
+    name: "Video",
+    query: {
+      vid: d.vid,
+    },
+  });
+  window.open(router.href, "_blank");
+}
+//取消请求
+function cancel() {
+  if (d.cancel) {
+    d.cancel("取消了上传");
+    d.isUpload = false;
+  }
+}
 </script>
 
 <template>
+  <div v-show="d.isUpload" class="occlude">
+    <div class="box">
+      <div class="text">
+        {{
+          d.progress == 100
+            ? "传输完成，请等待服务器响应"
+            : "正在上传中，请稍等"
+        }}
+      </div>
+      <div class="progress">
+        <div class="line" :style="{ width: d.progress * 2 + 'px' }"></div>
+        <div class="text" v-show="d.progress">
+          {{ d.progress == 100 ? "传输完成" : d.progress + "%" }}
+        </div>
+      </div>
+      <n-button class="button" type="primary" @click="cancel"
+        >取消上传</n-button
+      >
+    </div>
+  </div>
   <div class="contribution">
     <div class="content">
       <div class="title">
@@ -237,7 +290,7 @@ function resetForm() {
       >
         <n-form-item label="标题" path="title">
           <n-input
-            maxlength="30"
+            maxlength="40"
             minlength="1"
             show-count
             clearable
@@ -247,7 +300,7 @@ function resetForm() {
         </n-form-item>
         <n-form-item label="简介" path="info">
           <n-input
-            maxlength="280"
+            maxlength="300"
             show-count
             clearable
             v-model:value="form.info"
@@ -284,10 +337,23 @@ function resetForm() {
               <img :src="d.showimg" ref="showImgRef" alt="" />
               <div class="text">点击上传图片</div>
             </div>
-            <div v-show="d.progress" class="progress">
-              <div class="line" :style="{ width: d.progress * 3 + 'px' }"></div>
-              <div class="text">{{ d.progress + "%" }}</div>
+            <div class="progress">
+              <div
+                class="line"
+                :style="{ width: d.progress * 3.2 + 'px' }"
+              ></div>
+              <div class="text" v-show="d.progress">
+                {{ d.progress == 100 ? "传输完成" : d.progress + "%" }}
+              </div>
             </div>
+            <n-button
+              v-show="d.progress == 100"
+              class="button"
+              type="primary"
+              size="tiny"
+              @click="jumpVideo"
+              >查看视频</n-button
+            >
           </div>
 
           <n-modal
@@ -345,6 +411,51 @@ function resetForm() {
 </template>
 
 <style lang="less" scoped>
+.occlude {
+  z-index: 999;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(191, 191, 191, 0.3);
+  .box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    border-radius: 5px;
+    box-shadow: inset 0px 0px 10px 0px #bdbdbd;
+    background-color: white;
+    .text {
+      margin-bottom: 10px;
+    }
+    .progress {
+      display: flex;
+      flex-direction: row;
+      border-radius: 3px;
+      overflow: hidden;
+      align-items: center;
+      margin-bottom: 10px;
+      .line {
+        background-color: rgb(110, 110, 110);
+        height: 10px;
+        width: 0;
+      }
+      .text {
+        height: 20px;
+        line-height: 20px;
+        font-size: 10px;
+        margin-bottom: 0;
+      }
+    }
+  }
+}
 .cutting {
   position: relative;
   padding: 20px;
@@ -428,6 +539,9 @@ function resetForm() {
         line-height: 20px;
         font-size: 10px;
       }
+    }
+    .button {
+      margin-top: 10px;
     }
   }
 }

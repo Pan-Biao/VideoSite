@@ -2,6 +2,16 @@ import Time from "time.js/time";
 import Cookies from "js-cookie";
 import axios from './axios'
 
+function formatNumber(number) {
+    switch (number) {
+        case number > 10000:
+            return (number / 1000).toFixed(1) + "万"
+        case number > 100000000:
+            return (number / 10000000).toFixed(1) + "亿"
+        default:
+            return number
+    }
+}
 
 function time(number, mode) {
     //1 xxxx年xx月xx日 xx时xx分
@@ -50,5 +60,5 @@ function time(number, mode) {
 }
 
 export {
-    time, axios, Cookies
+    time, axios, Cookies, formatNumber
 }

@@ -41,16 +41,14 @@ watch(
 );
 //加载完成时
 onMounted(() => {
-  getMe().then(() => {
-    if (store.getters.userData.id) {
-      d.uMessage = store.getters.userData;
-      form.info = d.uMessage.info;
-      form.nickname = d.uMessage.nickname;
-      d.showimg = d.uMessage.head_portrait
-        ? store.state.fileApi + d.uMessage.head_portrait
-        : "";
-    }
-  });
+  if (store.getters.userData.id) {
+    d.uMessage = store.getters.userData;
+    form.info = d.uMessage.info;
+    form.nickname = d.uMessage.nickname;
+    d.showimg = d.uMessage.head_portrait
+      ? store.state.fileApi + d.uMessage.head_portrait
+      : "";
+  }
 });
 //获取方法
 const getMe = inject("getMe");
@@ -128,10 +126,16 @@ function updateUser(formData) {
   useUpdateUser(formData, (e) => {
     let rate = Math.floor((e.loaded / e.total) * 100);
     d.progress = rate;
-  }).then((res) => {
-    if (res) {
-    }
-  });
+  })
+    .then((res) => {
+      if (res) {
+        window.$message.success("修改成功，刷新页面即可");
+        store.dispatch("setUser", res);
+      }
+    })
+    .catch((err) => {
+      d.progress = 0;
+    });
 }
 //重置
 function resetForm() {
@@ -189,8 +193,10 @@ function resetForm() {
               <div class="text">点击上传图片</div>
             </div>
             <div v-show="d.progress" class="progress">
-              <div class="line" :style="{ width: d.progress * 3 + 'px' }"></div>
-              <div class="text">{{ d.progress + "%" }}</div>
+              <div class="line" :style="{ width: d.progress * 2 + 'px' }"></div>
+              <div class="text">
+                {{ d.progress == 100 ? "传输完成" : d.progress + "%" }}
+              </div>
             </div>
           </div>
 
