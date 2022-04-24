@@ -3,7 +3,7 @@ import { reactive, ref, onMounted, computed, inject, watch } from "vue";
 import VuePictureCropper, { cropper } from "vue-picture-cropper/dist/esm";
 import { useRouter, useRoute } from "vue-router";
 import store from "../store";
-import { useUpdateUser } from "../api/user";
+import { useUpdateUser, useChangePassword } from "../api/user";
 
 //数据
 const d = reactive({
@@ -20,13 +20,27 @@ const d = reactive({
   fileImg: null,
   uid: 0,
   progress: 0,
+  isPassword: false,
 });
 const upimgRef = ref(null);
 const form = reactive({
   info: "",
   nickname: "",
 });
-
+const formPassword = reactive({
+  oldPassword: "",
+  newPassword: "",
+});
+//监听password变化
+d.isPassword = d.route.meta["password"];
+watch(
+  () => {
+    return d.route.meta["password"];
+  },
+  (value) => {
+    reloadView();
+  }
+);
 //监听id变化
 d.uid = d.route.params["uid"];
 watch(
@@ -52,6 +66,7 @@ onMounted(() => {
 });
 //获取方法
 const getMe = inject("getMe");
+const reloadView = inject("reloadView");
 //点击选择图片
 function uploadImg() {
   upimgRef.value.value = "";
@@ -109,17 +124,31 @@ async function getResult() {
 }
 //上传
 function contributionConfirm() {
-  if (form.nickname == "") {
-    window.$message.error(res.msg);
+  if (d.isPassword) {
+    useChangePassword({
+      old_password: formPassword.oldPassword,
+      new_password: formPassword.newPassword,
+    }).then((res) => {
+      if (res) {
+        window.$message.success("修改成功,请重新登录");
+        d.router.push({
+          name: "Login",
+        });
+      }
+    });
+  } else {
+    if (form.nickname == "") {
+      window.$message.error(res.msg);
+    }
+    const formData = new FormData();
+
+    Object.keys(form).forEach((key) => {
+      formData.append(key, form[key]);
+    });
+    formData.append("img", d.fileImg);
+
+    updateUser(formData);
   }
-  const formData = new FormData();
-
-  Object.keys(form).forEach((key) => {
-    formData.append(key, form[key]);
-  });
-  formData.append("img", d.fileImg);
-
-  updateUser(formData);
 }
 //修改用户信息
 function updateUser(formData) {
@@ -139,6 +168,9 @@ function updateUser(formData) {
 }
 //重置
 function resetForm() {
+  formPassword.oldPassword = "";
+  formPassword.newPassword = "";
+
   d.uMessage = store.getters.userData;
   form.info = d.uMessage.info;
   form.nickname = d.uMessage.nickname;
@@ -151,8 +183,50 @@ function resetForm() {
 <template>
   <div class="contribution">
     <div class="content">
-      <div class="title">在这里进行一个用户的修改</div>
+      <div class="title">{{d.isPassword ? "在这里进行一个密码的修改" : "在这里进行一个用户的修改"}}</div>
       <n-form
+        v-if="d.isPassword"
+        :model="formPassword"
+        label-placement="left"
+        label-width="auto"
+        require-mark-placement="right-hanging"
+        size="large"
+        :style="{
+          maxWidth: '840px',
+          width: '640px',
+        }"
+      >
+        <n-form-item label="旧密码" path="oldPassword">
+          <n-input
+            maxlength="16"
+            minlength="6"
+            show-count
+            clearable
+            v-model:value="formPassword.oldPassword"
+            placeholder="旧密码"
+          />
+        </n-form-item>
+        <n-form-item label="新密码" path="newPassword">
+          <n-input
+            maxlength="16"
+            minlength="6"
+            show-count
+            clearable
+            v-model:value="formPassword.newPassword"
+            placeholder="新密码"
+          />
+        </n-form-item>
+        <div style="display: flex; justify-content: flex-end">
+          <n-button size="large" style="margin-right: 20px" @click="resetForm">
+            重置
+          </n-button>
+          <n-button size="large" type="primary" @click="contributionConfirm">
+            修改
+          </n-button>
+        </div>
+      </n-form>
+      <n-form
+        v-else
         :model="form"
         label-placement="left"
         label-width="auto"

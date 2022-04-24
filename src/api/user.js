@@ -27,6 +27,10 @@ async function useRegister(data) {
 async function useLogin(data) {
     return await api.useFetch(api.POST, getUrl("login"), data)
 }
+//修改密码
+async function useChangePassword(data) {
+    return await api.useFetch(api.POST, getUrl("change_password"), data)
+}
 //退出登录
 async function useLoginOut() {
     return await api.useFetch(api.DELETE, getUrl("logout"))
@@ -48,7 +52,9 @@ async function useUserUnseal(id) {
     return await api.useFetch(api.POST, getUrlRoot(["unseal", id].join("/")))
 }
 export {
-    useGetUserInformation, useGetMe, useRegister, useLogin, useLoginOut, useUpdateUser, useUserSuspend, useUserUnseal, useGetUserList, useRefreshToken
+    useGetUserInformation, useGetMe, useRegister, useLogin,
+    useLoginOut, useUpdateUser, useUserSuspend, useUserUnseal,
+    useGetUserList, useRefreshToken, useChangePassword
 }
 
 

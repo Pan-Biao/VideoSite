@@ -23,6 +23,7 @@ const routes = [
     { path: "/contribution/modify/:vid", name: "ContributionModify", meta: { modify: true }, component: () => import("../components/Contribution.vue") },
     { path: "/contribution/list", name: "ContributionList", component: () => import("../components/ContributionList.vue") },
     { path: "/user/modify/:uid", name: "UserModify", component: () => import("../components/UserModify.vue") },
+    { path: "/user/modify/:uid", name: "ChangePassword", meta: { password: true }, component: () => import("../components/UserModify.vue") },
     { path: "/search", name: "Search", component: () => import("../components/Search.vue") },
     { path: '/video/:vid', name: "Video", component: () => import("../components/PlayVideo.vue") },
     { path: '/test', name: "test", component: () => import("../components/test.vue") },

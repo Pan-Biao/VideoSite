@@ -78,6 +78,20 @@ const options = [
     },
   },
   {
+    label: "修改密码",
+    key: "修改密码",
+    props: {
+      onClick: () => {
+        d.router.push({
+          name: "ChangePassword",
+          params: {
+            uid: store.state.userData.id,
+          },
+        });
+      },
+    },
+  },
+  {
     label: "退出登录",
     key: "退出登录",
     props: {

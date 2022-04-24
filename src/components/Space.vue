@@ -400,7 +400,10 @@ function closeModal() {
             <div class="video_list">
               <div class="video" v-for="item in d.vlist" :key="item.id">
                 <div class="cover" @click="jumpVideo(item.id)">
-                  <img class="v_img" :src="store.state.fileApi + item.cover" />
+                  <img
+                    class="v_img"
+                    :src="item.cover ? store.state.fileApi + item.cover : ''"
+                  />
                 </div>
                 <div class="v_box">
                   <div @click="jumpVideo(item.id)" class="v_title">
@@ -430,7 +433,10 @@ function closeModal() {
                 :key="item.id"
               >
                 <div class="cover" @click="jumpVideo(item.id)">
-                  <img class="v_img" :src="store.state.fileApi + item.cover" />
+                  <img
+                    class="v_img"
+                    :src="item.cover ? store.state.fileApi + item.cover : ''"
+                  />
                 </div>
                 <div class="v_box">
                   <div @click="jumpVideo(item.id)" class="v_title">
@@ -495,7 +501,10 @@ function closeModal() {
                 :key="item.id"
               >
                 <div class="cover" @click="jumpVideo(item.id)">
-                  <img class="v_img" :src="store.state.fileApi + item.cover" />
+                  <img
+                    class="v_img"
+                    :src="item.cover ? store.state.fileApi + item.cover : ''"
+                  />
                 </div>
                 <div class="v_box">
                   <div @click="jumpVideo(item.id)" class="v_title">
