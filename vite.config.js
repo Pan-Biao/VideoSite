@@ -8,9 +8,9 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 export default defineConfig({
   define: {
     'process.env': {
-      // 'BASE_API': "http://120.76.134.60:2333",
+      'BASE_API': "http://120.76.134.60:2333",
       // 'BASE_API': "http://192.168.10.50:2333",
-      'BASE_API': "http://localhost:2333",
+      // 'BASE_API': "http://localhost:2333",
     }
   },
   plugins: [

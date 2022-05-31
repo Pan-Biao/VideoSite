@@ -95,11 +95,13 @@ onMounted(() => {
   // DOM 元素将在初始渲染后分配给 ref
   const vid = d.route.params["vid"];
   d.vid = +vid;
-  getListFavorite();
   getVideo(d.vid).then(() => {
-    findFollow(d.uMessage.id);
-    findLikeVideo(d.vMessage.id);
-    findCollection(d.vMessage.id);
+    if (store.getters.userData.id) {
+      findFollow(d.uMessage.id);
+      findLikeVideo(d.vMessage.id);
+      findCollection(d.vMessage.id);
+      getListFavorite();
+    }
     getCommentList();
   });
 });
@@ -755,7 +757,7 @@ textarea {
   }
 }
 .v_message {
-  max-width: 400px;
+  max-width: 800px;
   word-break: break-all;
   overflow: hidden;
   display: flex;

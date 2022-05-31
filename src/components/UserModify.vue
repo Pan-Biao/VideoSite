@@ -183,7 +183,11 @@ function resetForm() {
 <template>
   <div class="contribution">
     <div class="content">
-      <div class="title">{{d.isPassword ? "在这里进行一个密码的修改" : "在这里进行一个用户的修改"}}</div>
+      <div class="title">
+        {{
+          d.isPassword ? "在这里进行一个密码的修改" : "在这里进行一个用户的修改"
+        }}
+      </div>
       <n-form
         v-if="d.isPassword"
         :model="formPassword"
@@ -198,6 +202,7 @@ function resetForm() {
       >
         <n-form-item label="旧密码" path="oldPassword">
           <n-input
+            type="password"
             maxlength="16"
             minlength="6"
             show-count
@@ -208,6 +213,7 @@ function resetForm() {
         </n-form-item>
         <n-form-item label="新密码" path="newPassword">
           <n-input
+            type="password"
             maxlength="16"
             minlength="6"
             show-count

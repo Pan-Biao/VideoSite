@@ -783,6 +783,8 @@ function closeModal() {
       }
       .folder_video {
         background-color: var(--n-border-color);
+        box-shadow: inset 0px 0px 2px #8b8b8b;
+        border-radius: 5px;
       }
       .favorites {
         display: flex;

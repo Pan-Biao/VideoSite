@@ -7,7 +7,7 @@ import { darkTheme, zhCN } from "naive-ui";
 import messageApi from "./tool/message-api.vue";
 import store from "./store/index";
 import { Icon } from "@vicons/utils";
-import { Search, UserCircle } from "@vicons/fa";
+import { Search, UserCircle, ThLarge } from "@vicons/fa";
 import { useGetMe, useLoginOut, useRefreshToken } from "./api/user";
 import { Cookies } from "./tool";
 //主数据
@@ -17,6 +17,7 @@ const d = reactive({
   isRouterAlive: true,
   active: false,
   router: useRouter(),
+  route: useRoute(),
   searchValue: "",
   flag: false,
 });
@@ -27,10 +28,17 @@ provide("setTheme", setTheme);
 onMounted(() => {
   if (Cookies.get("X-Token")) {
     getMe().then((res) => {
-      useRefreshToken().then((res) => {
-        let day = new Date(res.token_expire).getDay();
-        Cookies.set("X-Token", res.token, { expires: day });
-      });
+      const oldTime = +localStorage.getItem("token_time");
+      const newTime = new Date().getTime();
+      const date = newTime - oldTime;
+      const day3 = 259200000;
+      if (date > day3) {
+        useRefreshToken().then((res) => {
+          let day = new Date(res.token_expire).getDay();
+          Cookies.set("X-Token", res.token, { expires: day });
+          localStorage.setItem("token_time", new Date().getTime());
+        });
+      }
     });
   }
 });
@@ -160,6 +168,11 @@ function logo() {
     name: "Home",
   });
 }
+function toSubArea() {
+  d.router.push({
+    name: "SubArea",
+  });
+}
 function contribution() {
   d.router.push({
     name: "Contribution",
@@ -204,6 +217,12 @@ function setTheme() {
               @click="logo"
               preview-disabled
             />
+            <n-button @click="toSubArea" text type="info">
+              <template #icon>
+                <n-icon :component="ThLarge"> </n-icon>
+              </template>
+              分区
+            </n-button>
             <n-input
               @keyup="searchKeyup"
               v-model:value="d.searchValue"
@@ -346,6 +365,9 @@ body {
     flex-wrap: nowrap;
     align-items: center;
     .n-image {
+      margin-right: 40px;
+    }
+    .n-button {
       margin-right: 40px;
     }
   }

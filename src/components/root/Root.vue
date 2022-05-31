@@ -79,7 +79,7 @@ const menuOptions = [
         { default: () => "分区设置" }
       ),
     icon: renderIcon(ThLarge),
-    key: "subarea",
+    key: "subareas",
   },
 ];
 </script>

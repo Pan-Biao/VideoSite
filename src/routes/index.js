@@ -1,5 +1,5 @@
 
-import { Robot } from '@vicons/fa'
+import { CalendarTimes, Robot } from '@vicons/fa'
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 // 1. 定义路由组件.
@@ -9,14 +9,7 @@ import Home from "../components/Home.vue"
 // 每个路由都需要映射到一个组件。
 const routes = [
     { path: '/', name: "Home", component: Home },
-    {
-        path: '/root', name: "Root", meta: { flag: true }, component: () => import("../components/root/Root.vue"), children: [
-            { path: "carousel", name: "Carousel", component: () => import("../components/root/Carousel.vue") },
-            { path: "users", name: "Users", component: () => import("../components/root/Users.vue") },
-            { path: "videos", name: "Videos", component: () => import("../components/root/Videos.vue") },
-            { path: "subarea", name: "SubArea", component: () => import("../components/root/SubArea.vue") },
-        ]
-    },
+    { path: '/subarea', name: "SubArea", component: () => import("../components/SubArea.vue") },
     { path: '/login', name: "Login", meta: { flag: true }, component: () => import("../components/Login.vue") },
     { path: "/space/:uid", name: "Space", component: () => import("../components/Space.vue") },
     { path: "/contribution", name: "Contribution", component: () => import("../components/Contribution.vue") },
@@ -25,7 +18,15 @@ const routes = [
     { path: "/user/modify/:uid", name: "UserModify", component: () => import("../components/UserModify.vue") },
     { path: "/user/modify/:uid", name: "ChangePassword", meta: { password: true }, component: () => import("../components/UserModify.vue") },
     { path: "/search", name: "Search", component: () => import("../components/Search.vue") },
-    { path: '/video/:vid', name: "Video", component: () => import("../components/PlayVideo.vue") },
+    { path: '/video/:vid', name: "Video", meta: { video: true }, component: () => import("../components/PlayVideo.vue") },
+    {
+        path: '/root', name: "Root", meta: { flag: true }, component: () => import("../components/root/Root.vue"), children: [
+            { path: "carousel", name: "Carousel", component: () => import("../components/root/Carousel.vue") },
+            { path: "users", name: "Users", component: () => import("../components/root/Users.vue") },
+            { path: "videos", name: "Videos", component: () => import("../components/root/Videos.vue") },
+            { path: "subarea", name: "SubAreas", component: () => import("../components/root/SubAreas.vue") },
+        ]
+    },
     { path: '/test', name: "test", component: () => import("../components/test.vue") },
     // 将匹配所有内容并将其放在 `$route.params.pathMatch` 下
     { path: '/:pathMatch(.*)*', name: 'NotFound', meta: { flag: true }, component: () => import("../components/NotFound.vue") },
