@@ -9,3 +9,12 @@ This template should help get you started developing with Vue 3 in Vite. The tem
 ## 小前端，垃圾项目
 视频网站
 使用了很多库
+
+## 安装node包
+npm i
+
+## 开发 
+npm run dev
+
+## 打包
+npm run build
